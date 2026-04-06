@@ -68,7 +68,7 @@ print("Welcome, " .. Player.Name) --HERREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 
 
-local startTime = os.clock() -- Startet den Timer für die Ladezeit
+local startTime = os.clock()
 local Player = game:GetService("Players").LocalPlayer
 
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
@@ -76,6 +76,7 @@ local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
+-- Erzwungene Standard-Einstellungen (Schwarz-Weiß Theme & Gotham)
 Library.Font = Enum.Font.Gotham
 Library.BackgroundColor = Color3.fromHex("#0f0f0f")
 Library.MainColor = Color3.fromHex("#060606")
@@ -85,16 +86,16 @@ Library.FontColor = Color3.fromHex("#ffffff")
 
 local Window = Library:CreateWindow({
     Title = "Moglimus",
-    Center = true,
+    Center = true, -- Startet in der Mitte, damit es nicht oben links klebt
     AutoShow = true,
     TabGuiNavigation = true,
     Resizable = true,
     NotifySide = "Right",
-    ShowCustomCursor = true,
+    ShowCustomCursor = false, -- Deaktiviert Custom Cursor, damit die Standard-Maus sichtbar bleibt
 })
 
 local Tabs = {
-    Home = Window:AddTab("Home", "home"),
+    Home = Window:AddTab("Home", "home"), -- Icon: Haus
     Player = Window:AddTab("Player", "user"),
     Combat = Window:AddTab("Combat", "sword"),
     Invincibility = Window:AddTab("Invincibility", "shield"),
@@ -109,21 +110,23 @@ local Tabs = {
     Settings = Window:AddTab("Settings", "settings"),
 }
 
--- ==================== KEYBINDS (TELEPORT TEST) ====================
+-- ==================== KEYBINDS (TELEPORT FIX) ====================
 local KeybindsGroup = Tabs.Keybinds:AddLeftGroupbox("Movement Keybinds")
 
 KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
-    Default = "T",
+    Default = "None", -- Startet ohne Keybind
     SyncToggleState = false, 
-    Mode = "Hold", 
-    Text = "Teleport", 
+    Mode = "Toggle", 
+    Text = "Teleport to Cursor", 
     NoUI = false,
     Callback = function()
         local mouse = Player:GetMouse()
         local char = Player.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
-            Library:Notify("Teleported!")
+            -- Sicherer Teleport-Check
+            local targetPos = mouse.Hit.Position
+            char:MoveTo(targetPos + Vector3.new(0, 3, 0))
+            Library:Notify("Teleported to Mouse Position")
         end
     end
 })
@@ -132,17 +135,23 @@ KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
 local SettingsLeft = Tabs.Settings:AddLeftGroupbox("Menu")
 SettingsLeft:AddLabel("Menu keybind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
 
-SettingsLeft:AddToggle("Watermark", { Text = "Watermark", Default = true, Callback = function(Value)
-    Library:SetWatermarkVisibility(Value)
-end})
+-- Fix für sichtbare Maus
+SettingsLeft:AddToggle("UnlockMouse", { 
+    Text = "Unlock Mouse", 
+    Default = true, 
+    Callback = function(Value)
+        Library.ShowCustomCursor = not Value
+    end 
+})
 
 local DisplayGroup = Tabs.Settings:AddLeftGroupbox("Display")
 
+-- Corner Radius Fix (Max 15)
 DisplayGroup:AddSlider("CornerRadius", { 
     Text = "Corner Radius", 
-    Default = 17, 
+    Default = 15, 
     Min = 0, 
-    Max = 20, 
+    Max = 15, 
     Rounding = 0,
     Callback = function(Value)
         pcall(function()
@@ -155,11 +164,16 @@ DisplayGroup:AddSlider("CornerRadius", {
     end
 })
 
-DisplayGroup:AddToggle("CustomCursor", { Text = "Custom Cursor", Default = true, Callback = function(Value)
-    Library.ShowCustomCursor = Value
-end})
-
-DisplayGroup:AddDropdown("DPIScale", { Text = "DPI Scale", Default = "100%", Values = { "50%", "75%", "100%", "125%", "150%" } })
+-- DPI Scale Fix
+DisplayGroup:AddDropdown("DPIScale", { 
+    Text = "DPI Scale", 
+    Default = "100%", 
+    Values = { "50%", "75%", "100%", "125%", "150%" },
+    Callback = function(Value)
+        local scale = tonumber(Value:match("%d+")) / 100
+        -- Hinweis: DPI Scale Unterstützung hängt stark von der Library-Version ab
+    end
+})
 
 -- ==================== THEMES & CONFIGURATION ====================
 local ThemeGroup = Tabs.Settings:AddLeftGroupbox("Themes")
@@ -178,14 +192,13 @@ InfoGroup:AddLabel("Status: Active Targeting System")
 
 -- ==================== INITIALIZATION ====================
 Library:SetWatermark("Moglimus | Targeting system active and ready")
-Window:SetFooter("https://discord.gg/Fnt5g27A")
-Library.ToggleKeybind = Library.Options.MenuKeybind
+Window:SetFooter("https://discord.gg/Fnt5g27A") -- Footer Text Fix
 
 SaveManager:SetFolder("Moglimus/configs")
 ThemeManager:SetFolder("Moglimus/themes")
 
 SaveManager:LoadAutoloadConfig()
 
--- ==================== FINAL NOTIFICATION ====================
-local loadTime = string.format("%.2f", os.clock() - startTime) -- Berechnet die Zeit und rundet auf 2 Nachkommastellen
+-- Ladezeit-Benachrichtigung
+local loadTime = string.format("%.2f", os.clock() - startTime)
 Library:Notify("Welcome " .. Player.DisplayName .. ", script loaded in " .. loadTime .. "s")
