@@ -1,6 +1,6 @@
 -- // MOGLIMUS SECURITY SYSTEM //
 local SCRIPT_KEY = " ‌‍‎‏‌‍‎‏‌‍‎‏‌‍‎‏‌‍‎‏"
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1490562406252806154/Nkj-o9_HbejpTM54QqKWYN-pe2DDiB454PPM8Tn0YtTyBnMnp2bxNmHEkRViaBefL-ZC"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1490562406252806154/Nkj-o9_HbejpTM54QqKWYN-pe2DDiB454PPM8Tn0YtTyBnMnp2bxNmHEkRViaBefL-ZC0"
 local BANNED_IDS = {2482204501, 10567559225, 10641564753, 4361510752, 260597897, 9742385779}
 local BANNED_HWIDS = {"HWID Put banned ClientIds here"}
 local Player = game:GetService("Players").LocalPlayer
@@ -68,6 +68,7 @@ print("Welcome, " .. Player.Name) --HERREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 
 
+-- // MOGLIMUS SECURITY SYSTEM //
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
@@ -78,11 +79,13 @@ local Window = Library:CreateWindow({
     Center = true,
     AutoShow = true,
     TabGuiNavigation = true,
+    Resizable = true, -- Erlaubt das Verändern der Gesamtgröße
     NotifySide = "Right",
+    ShowCustomCursor = true,
 })
 
 local Tabs = {
-    Home = Window:AddTab("Home", "home"),
+    Home = Window:AddTab("Home", "home"), -- Icon hinzugefügt
     Player = Window:AddTab("Player", "user"),
     Combat = Window:AddTab("Combat", "sword"),
     Invincibility = Window:AddTab("Invincibility", "shield"),
@@ -99,6 +102,7 @@ local Tabs = {
 
 local SettingsLeft = Tabs.Settings:AddLeftGroupbox("Menu")
 SettingsLeft:AddLabel("Menu keybind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
+
 SettingsLeft:AddToggle("Watermark", { Text = "Watermark", Default = true })
 SettingsLeft:AddToggle("KeybindMenu", { Text = "Open Keybind Menu", Default = false })
 SettingsLeft:AddToggle("UnlockMouse", { Text = "Unlock Mouse", Default = false })
@@ -106,7 +110,7 @@ SettingsLeft:AddToggle("UnlockMouse", { Text = "Unlock Mouse", Default = false }
 local DisplayGroup = Tabs.Settings:AddLeftGroupbox("Display")
 DisplayGroup:AddSlider("CornerRadius", { Text = "Corner Radius", Default = 17, Min = 0, Max = 20, Rounding = 0 })
 DisplayGroup:AddToggle("CustomCursor", { Text = "Custom Cursor", Default = true })
-DisplayGroup:AddDropdown("DPIScale", { Text = "DPI Scale", Default = 1, Values = { "50%", "75%", "100%", "125%", "150%" } })
+DisplayGroup:AddDropdown("DPIScale", { Text = "DPI Scale", Default = "100%", Values = { "50%", "75%", "100%", "125%", "150%" } })
 
 local ThemeGroup = Tabs.Settings:AddLeftGroupbox("Themes")
 ThemeManager:SetLibrary(Library)
@@ -122,13 +126,22 @@ local InfoGroup = Tabs.Settings:AddRightGroupbox("Info")
 InfoGroup:AddLabel("https://discord.gg/Fnt5g27A")
 InfoGroup:AddLabel("Status: Active Targeting System")
 
+-- Setze Accent Color auf Weiß und Design auf Schwarz/Weiß
 Library:SetWatermark("Moglimus | Targeting system active and ready")
+Library.AccentColor = Color3.fromRGB(255, 255, 255)
+Library.MainColor = Color3.fromRGB(20, 20, 20)
+Library.BackgroundColor = Color3.fromRGB(15, 15, 15)
+Library.OutlineColor = Color3.fromRGB(40, 40, 40)
+Library.FontColor = Color3.fromRGB(255, 255, 255)
 
-Library.WindowTitle = "Moglimus"
+-- Footer Text ändern
+Window:SetFooter("https://discord.gg/Fnt5g27A")
+
+-- Keybind für das Schließen/Öffnen des Menüs
+Library.ToggleKeybind = Library.Options.MenuKeybind
 
 SaveManager:SetFolder("Moglimus/configs")
 ThemeManager:SetFolder("Moglimus/themes")
-
 SaveManager:LoadAutoloadConfig()
 
 Library:Notify("Moglimus Loaded Successfully")
