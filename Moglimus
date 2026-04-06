@@ -71,13 +71,18 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/
 
 local startTime = os.clock()
 local Player = game:GetService("Players").LocalPlayer
-local RunService = game:GetService("RunService")
-local Stats = game:GetService("Stats")
 
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+
+Library.Font = Enum.Font.Gotham
+Library.BackgroundColor = Color3.fromHex("#0f0f0f")
+Library.MainColor = Color3.fromHex("#060606")
+Library.AccentColor = Color3.fromHex("#ffffff")
+Library.OutlineColor = Color3.fromHex("#9f9f9f")
+Library.FontColor = Color3.fromHex("#ffffff")
 
 local Window = Library:CreateWindow({
     Title = "Moglimus",
@@ -90,7 +95,7 @@ local Window = Library:CreateWindow({
 })
 
 local Tabs = {
-    Home = Window:AddTab("Home", "rbxassetid://7072721682"),
+    Home = Window:AddTab("Home", "rbxassetid://10747345041"),
     Player = Window:AddTab("Player", "user"),
     Combat = Window:AddTab("Combat", "sword"),
     Invincibility = Window:AddTab("Invincibility", "shield"),
@@ -106,6 +111,7 @@ local Tabs = {
 }
 
 local KeybindsGroup = Tabs.Keybinds:AddLeftGroupbox("Movement Keybinds")
+
 KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
     Default = "None",
     SyncToggleState = false, 
@@ -116,83 +122,49 @@ KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
         local mouse = Player:GetMouse()
         local char = Player.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
-            char:MoveTo(mouse.Hit.Position + Vector3.new(0, 3, 0))
+            local targetPos = mouse.Hit.Position
+            char:MoveTo(targetPos + Vector3.new(0, 3, 0))
         end
     end
 })
 
-local KeybindMenuList = Tabs.Settings:AddRightGroupbox("Keybind Menu")
-KeybindMenuList:AddToggle("KeybindMenuToggle", { Text = "Show Keybind Menu", Default = false, Callback = function(Value)
-    Library.KeybindFrame.Visible = Value
-end})
+local SettingsLeft = Tabs.Settings:AddLeftGroupbox("Menu")
+SettingsLeft:AddLabel("Menu keybind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
 
-local BackgroundGroup = Tabs.Settings:AddLeftGroupbox("Background")
-BackgroundGroup:AddInput("BGInput", {
-    Text = "Background Link / Image ID",
-    Default = "",
-    Placeholder = "Paste ID here...",
+SettingsLeft:AddToggle("UnlockMouse", { 
+    Text = "Unlock Mouse", 
+    Default = true, 
     Callback = function(Value)
-        local id = Value:match("%d+")
-        if id then
-            Window.Background.Image = "rbxassetid://" .. id
-        end
-    end
-})
-BackgroundGroup:AddToggle("BGToggle", { Text = "Show Background", Default = true, Callback = function(Value)
-    Window.Background.Visible = Value
-end})
-
-local NotifyGroup = Tabs.Settings:AddRightGroupbox("Notifications")
-local NotifySound = Instance.new("Sound", game.Workspace)
-
-NotifyGroup:AddDropdown("NotifyPreset", {
-    Text = "Presets",
-    Default = "None",
-    Values = { "None", "Steam", "Bell", "Ding" },
-    Callback = function(Value)
-        if Value == "Steam" then
-            Library.Options.NotifySoundID:SetValue("18317665126")
-        elseif Value == "Bell" then
-            Library.Options.NotifySoundID:SetValue("1283290055")
-        end
-    end
-})
-
-NotifyGroup:AddInput("NotifySoundID", {
-    Text = "Sound ID",
-    Default = "18317665126",
-    Callback = function(Value)
-        NotifySound.SoundId = "rbxassetid://" .. Value
-    end
-})
-
-NotifyGroup:AddDropdown("NotifySide", {
-    Text = "Notification Side",
-    Default = "Right",
-    Values = { "TopRight", "BottomRight", "TopLeft", "BottomLeft" },
-    Callback = function(Value)
-        Window.NotifySide = Value
-    end
+        Library.ShowCustomCursor = not Value
+    end 
 })
 
 local DisplayGroup = Tabs.Settings:AddLeftGroupbox("Display")
+
 DisplayGroup:AddSlider("CornerRadius", { 
-    Text = "Corner Radius", Default = 15, Min = 0, Max = 15, Rounding = 0,
+    Text = "Corner Radius", 
+    Default = 15, 
+    Min = 0, 
+    Max = 15, 
+    Rounding = 0,
     Callback = function(Value)
-        for _, obj in pairs(Window.Main:GetDescendants()) do
-            if obj:IsA("UICorner") then
-                obj.CornerRadius = UDim.new(0, Value)
+        pcall(function()
+            local menuGui = game:GetService("CoreGui"):FindFirstChild("Moglimus") or game:GetService("CoreGui"):FindFirstChild("ScreenGui")
+            if menuGui then
+                for _, gui in pairs(menuGui:GetDescendants()) do
+                    if gui:IsA("UICorner") then
+                        gui.CornerRadius = UDim.new(0, Value)
+                    end
+                end
             end
-        end
+        end)
     end
 })
 
 DisplayGroup:AddDropdown("DPIScale", { 
-    Text = "DPI Scale", Default = "100%", Values = { "50%", "75%", "100%", "125%", "150%" },
-    Callback = function(Value)
-        local scale = tonumber(Value:match("%d+")) / 100
-        Window.Main.UIScale.Scale = scale
-    end
+    Text = "DPI Scale", 
+    Default = "100%", 
+    Values = { "50%", "75%", "100%", "125%", "150%" }
 })
 
 local ThemeGroup = Tabs.Settings:AddLeftGroupbox("Themes")
@@ -201,15 +173,21 @@ ThemeManager:ApplyToTab(Tabs.Settings)
 
 local ConfigGroup = Tabs.Settings:AddRightGroupbox("Configuration")
 SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
 SaveManager:BuildConfigSection(Tabs.Settings)
 
-Library:SetWatermark("Moglimus | Targeting system active")
+local InfoGroup = Tabs.Settings:AddRightGroupbox("Info")
+InfoGroup:AddLabel("https://discord.gg/Fnt5g27A")
+InfoGroup:AddLabel("Status: Active Targeting System")
 
-RunService.RenderStepped:Connect(function()
-    local fps = math.floor(1 / RunService.RenderStepped:Wait())
-    local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-    Window:SetFooter(fps .. " FPS | Moglimus | " .. ping .. " MS")
-end)
+Library:SetWatermark("Moglimus | Targeting system active and ready")
+Window:SetFooter("https://discord.gg/Fnt5g27A")
+
+SaveManager:SetFolder("Moglimus/configs")
+ThemeManager:SetFolder("Moglimus/themes")
+
+SaveManager:LoadAutoloadConfig()
 
 local loadTime = string.format("%.2f", os.clock() - startTime)
 Library:Notify("Welcome " .. Player.DisplayName .. ", script loaded in " .. loadTime .. "s")
