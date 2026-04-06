@@ -68,111 +68,115 @@ print("Welcome, " .. Player.Name) --HERREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 
 
-local startTime = os.clock()
-local Player = game:GetService("Players").LocalPlayer
-local RunService = game:GetService("RunService")
-local Stats = game:GetService("Stats")
+local Obsidian = loadstring(game:HttpGet("https://raw.githubusercontent.com/teppyboy/Obsidian/main/Source.lua"))()
 
-local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
-local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
-local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
-local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
-
-local Window = Library:CreateWindow({
-    Title = "Moglimus",
-    Center = true,
-    AutoShow = true,
-    Resizable = true,
-    NotifySide = "Right",
-    ShowCustomCursor = false,
+local Window = Obsidian:CreateWindow({
+    Name = "Moglimus",
+    Theme = "Default", -- Du kannst das später in den Settings anpassen
+    Footer = "https://discord.gg/Fnt5g27A" -- Dein Discord Link im Footer
 })
 
-local Tabs = {
-    Home = Window:AddTab("Home", "rbxassetid://7072721682"),
-    Player = Window:AddTab("Player", "user"),
-    Combat = Window:AddTab("Combat", "sword"),
-    Invincibility = Window:AddTab("Invincibility", "shield"),
-    Target = Window:AddTab("Target", "target"),
-    Blobman = Window:AddTab("Blobman", "info"),
-    Toys = Window:AddTab("Toys", "package"),
-    Visual = Window:AddTab("Visual", "eye"),
-    ['Auto-Clicker'] = Window:AddTab("Auto-Clicker", "mouse-pointer"),
-    Keybinds = Window:AddTab("Keybinds", "keyboard"),
-    Misc = Window:AddTab("Misc", "list"),
-    Lists = Window:AddTab("Lists", "file-text"),
-    Settings = Window:AddTab("Settings", "settings"),
-}
+-- Die Tabs (alle leer, wie gewünscht)
+local Home = Window:CreateTab("Home", "rbxassetid://10734882786")
+local Player = Window:CreateTab("Player", "rbxassetid://10747373176")
+local Combat = Window:CreateTab("Combat", "rbxassetid://10709819149")
+local Invincibility = Window:CreateTab("Invincibility", "rbxassetid://10723346959")
+local Target = Window:CreateTab("Target", "rbxassetid://10709751939")
+local Blobman = Window:CreateTab("Blobman", "rbxassetid://10709810534")
+local Toys = Window:CreateTab("Toys", "rbxassetid://10723352353")
+local Visual = Window:CreateTab("Visual", "rbxassetid://10709752906")
+local AutoClicker = Window:CreateTab("Auto-Clicker", "rbxassetid://10709794351")
+local Keybinds = Window:CreateTab("Keybinds", "rbxassetid://10704944511")
+local Misc = Window:CreateTab("Misc", "rbxassetid://10709813243")
+local Lists = Window:CreateTab("Lists", "rbxassetid://10723374641")
+local Settings = Window:CreateTab("Settings", "rbxassetid://10704950315")
 
-local MovementGroup = Tabs.Keybinds:AddLeftGroupbox("Movement")
-MovementGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
-    Default = "None",
-    NoUI = false,
-    Text = "Teleport",
-    Mode = "Toggle", -- In Linoria/Obsidian ist "Toggle" der Modus für Keybind-Aktionen
-    Callback = function()
-        local mouse = Player:GetMouse()
-        if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-            Player.Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
-        end
+--- SETTINGS TAB - EXAKT WIE AUF DEN BILDERN ---
+
+-- Linke Seite
+local MenuSec = Settings:CreateSection("Menu")
+MenuSec:CreateKeybind("Menu Keybind", "X", function() end)
+MenuSec:CreateToggle("Watermark", true, function() end)
+MenuSec:CreateToggle("Open Keybind Menu", false, function() end)
+MenuSec:CreateToggle("Unlock Mouse", false, function() end)
+MenuSec:CreateToggle("Alt-Lock", false, function() end)
+
+local DisplaySec = Settings:CreateSection("Display")
+DisplaySec:CreateSlider("Corner Radius", 0, 20, 20, function() end)
+DisplaySec:CreateToggle("Custom Cursor", true, function() end)
+DisplaySec:CreateDropdown("DPI Scale", {"100%", "125%", "150%"}, "100%", function() end)
+
+local ThemesSec = Settings:CreateSection("Themes")
+ThemesSec:CreateColorPicker("Background color", Color3.fromRGB(25, 25, 25), function() end)
+ThemesSec:CreateColorPicker("Main color", Color3.fromRGB(30, 30, 30), function() end)
+ThemesSec:CreateColorPicker("Accent color", Color3.fromRGB(168, 85, 247), function() end)
+ThemesSec:CreateColorPicker("Outline color", Color3.fromRGB(10, 10, 10), function() end)
+ThemesSec:CreateColorPicker("Font color", Color3.fromRGB(255, 255, 255), function() end)
+
+-- Rechte Seite
+local BackSec = Settings:CreateSection("Background")
+BackSec:CreateInput("Background Link/Image ID", "Input ID...", function() end)
+BackSec:CreateToggle("Toggle", false, function() end)
+
+local NotifSec = Settings:CreateSection("Notifications")
+NotifSec:CreateDropdown("Presets", {"Steam", "Obsidian", "Modern"}, "Steam", function() end)
+NotifSec:CreateInput("Sound ID", "18317665126", function() end)
+NotifSec:CreateDropdown("Notification Side", {"Left", "Right"}, "Right", function() end)
+NotifSec:CreateButton("Test Notification", function() end)
+
+local ConfigSec = Settings:CreateSection("Configuration")
+ConfigSec:CreateInput("Config name", "Input Name", function() end)
+ConfigSec:CreateButton("Create config", function() end)
+ConfigSec:CreateDropdown("Config list", {"Nothing"}, "Nothing", function() end)
+ConfigSec:CreateButton("Load config", function() end)
+ConfigSec:CreateButton("Overwrite config", function() end)
+ConfigSec:CreateButton("Delete config", function() end)
+
+--- CUSTOM WATERMARK (UNTEN MITTE) ---
+
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local UICorner = Instance.new("UICorner")
+local Label = Instance.new("TextLabel")
+local UIStroke = Instance.new("UIStroke")
+
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.Name = "MoglimusWatermark"
+
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BackgroundTransparency = 0.2
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.5, -110, 0.92, 0) -- Unten in der Mitte
+MainFrame.Size = UDim2.new(0, 220, 0, 30)
+
+UICorner.CornerRadius = UDim.new(1, 0) -- Abgerundet wie im Bild
+UICorner.Parent = MainFrame
+
+UIStroke.Color = Color3.fromRGB(168, 85, 247) -- Lila Rahmen passend zum Thema
+UIStroke.Thickness = 1.5
+UIStroke.Parent = MainFrame
+
+Label.Parent = MainFrame
+Label.Size = UDim2.new(1, 0, 1, 0)
+Label.Font = Enum.Font.SourceSans
+Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+Label.TextSize = 16
+Label.Text = "Lade Daten..."
+
+-- Loop für FPS und MS (alle 0.5 Sekunden)
+spawn(function()
+    local RunService = game:GetService("RunService")
+    local Stats = game:GetService("Stats")
+    
+    while true do
+        local fps = math.floor(1 / RunService.RenderStepped:Wait())
+        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        
+        -- Das gewünschte Format: FPS | Moglimus | MS
+        Label.Text = "Ṁ  " .. fps .. " fps | Moglimus | " .. ping .. " ms"
+        
+        task.wait(0.5) -- Update alle 0.5s gegen Spam
     end
-})
-
-local MenuSettings = Tabs.Settings:AddLeftGroupbox("Menu")
-MenuSettings:AddLabel("Menu keybind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
-Library.ToggleKeybind = Library.Options.MenuKeybind
-
-MenuSettings:AddToggle("ShowKeybinds", { Text = "Show Keybind Menu", Default = false, Callback = function(Value) Library.KeybindFrame.Visible = Value end })
-MenuSettings:AddToggle("Watermark", { Text = "Show Watermark", Default = true, Callback = function(Value) Library:SetWatermarkVisibility(Value) end })
-
-local VisualSettings = Tabs.Settings:AddLeftGroupbox("Display")
-VisualSettings:AddSlider("CornerRadius", { 
-    Text = "Corner Radius", Default = 15, Min = 0, Max = 15, Rounding = 0,
-    Callback = function(Value)
-        pcall(function()
-            for _, obj in pairs(Window.Main:GetDescendants()) do
-                if obj:IsA("UICorner") then obj.CornerRadius = UDim.new(0, Value) end
-            end
-        end)
-    end
-})
-
-VisualSettings:AddDropdown("UIScale", { 
-    Text = "UI Scale (DPI)", Default = "100%", Values = { "50%", "75%", "100%", "125%", "150%" },
-    Callback = function(Value)
-        local scale = tonumber(Value:match("%d+")) / 100
-        if not Window.Main:FindFirstChild("UIScale") then
-            Instance.new("UIScale", Window.Main)
-        end
-        Window.Main.UIScale.Scale = scale
-    end
-})
-
-local BgGroup = Tabs.Settings:AddRightGroupbox("Background")
-BgGroup:AddInput("BgId", { Text = "Image ID", Default = "", Callback = function(Value) Window.Background.Image = "rbxassetid://" .. Value:match("%d+") end })
-
-local NotifyGroup = Tabs.Settings:AddRightGroupbox("Notifications")
-NotifyGroup:AddDropdown("NotifySide", { Text = "Position", Default = "Right", Values = { "TopRight", "BottomRight", "TopLeft", "BottomLeft" }, Callback = function(Value) Window.NotifySide = Value Library:Notify("Position changed to " .. Value) end })
-NotifyGroup:AddInput("SoundId", { Text = "Sound ID", Default = "18317665126", Callback = function(V) Library:Notify("Sound ID updated!") end })
-
-ThemeManager:SetLibrary(Library)
-ThemeManager:ApplyToTab(Tabs.Settings)
-SaveManager:SetLibrary(Library)
-SaveManager:BuildConfigSection(Tabs.Settings)
-
-Window:SetFooter("https://discord.gg/Fnt5g27A")
-Library:SetWatermark("Moglimus | Targeting system active")
-
-local StatsLabel = Instance.new("Label", Window.Main) -- Simulierter kleiner Popup-Text unten Mitte
-local function updateStats()
-    local fps = math.floor(1 / RunService.RenderStepped:Wait())
-    local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-    Library:SetWatermark(fps .. " FPS  |  Moglimus  |  " .. ping .. " MS")
-end
-
-RunService.Heartbeat:Connect(function()
-    if tick() % 0.5 < 0.05 then updateStats() end
 end)
-
-SaveManager:SetFolder("Moglimus/configs")
-ThemeManager:SetFolder("Moglimus/themes")
-SaveManager:LoadAutoloadConfig()
