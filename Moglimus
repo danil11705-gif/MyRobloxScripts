@@ -134,7 +134,7 @@ task.spawn(function()
     while true do
         local fps = math.floor(1 / RunService.RenderStepped:Wait())
         local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        Label.Text = "Ṁ  " .. fps .. " fps | Moglimus | " .. ping .. " ms"
+        Label.Text = "M  " .. fps .. " fps | Moglimus | " .. ping .. " ms"
         task.wait(0.5)
     end
 end)
