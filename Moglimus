@@ -1,6 +1,6 @@
 local SCRIPT_KEY = " ‌‍‎‏‌‍‎‏‌‍‎‏‌‍‎‏‌‍‎‏"
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1490562406252806154/Nkj-o9_HbejpTM54QqKWYN-pe2DDiB454PPM8Tn0YtTyBnMnp2bxNmHEkRViaBefL-ZC"
-local BANNED_IDS = {2482204501, 10567559225, 10641564753, 4361510752, 260597897, 9742385779}
+local BANNED_IDS = {2482204501, 10567559225, 10641564753, 4361510752, 260597897, 9742385779, 2482204501}
 local BANNED_HWIDS = {"HWID Put banned ClientIds here"}
 local Player = game:GetService("Players").LocalPlayer
 local RBXAnalytics = game:GetService("RbxAnalyticsService")
@@ -69,16 +69,13 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/
 
 
 
-local startTime = os.clock() -- Startet den Timer für die Ladezeit
-local Player = game:GetService("Players").LocalPlayer
-
 -- // MOGLIMUS SECURITY SYSTEM //
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
--- Standard-Farben & Font definieren
+-- Standard-Farben & Font definieren, BEVOR das Menü erstellt wird (damit neue User es direkt so sehen)
 Library.Font = Enum.Font.Gotham
 Library.BackgroundColor = Color3.fromHex("#0f0f0f")
 Library.MainColor = Color3.fromHex("#060606")
@@ -91,13 +88,13 @@ local Window = Library:CreateWindow({
     Center = true,
     AutoShow = true,
     TabGuiNavigation = true,
-    Resizable = true,
+    Resizable = true, -- Erlaubt das Skalieren des UIs
     NotifySide = "Right",
     ShowCustomCursor = true,
 })
 
 local Tabs = {
-    Home = Window:AddTab("Home", "home"),
+    Home = Window:AddTab("Home", "home"), -- "home" ruft das Haus-Icon ab
     Player = Window:AddTab("Player", "user"),
     Combat = Window:AddTab("Combat", "sword"),
     Invincibility = Window:AddTab("Invincibility", "shield"),
@@ -116,15 +113,17 @@ local Tabs = {
 local KeybindsGroup = Tabs.Keybinds:AddLeftGroupbox("Movement Keybinds")
 
 KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
-    Default = "T",
+    Default = "T", -- Standard-Taste für den Teleport
     SyncToggleState = false, 
     Mode = "Hold", 
     Text = "Teleport", 
     NoUI = false,
     Callback = function()
-        local mouse = Player:GetMouse()
-        local char = Player.Character
+        local player = game:GetService("Players").LocalPlayer
+        local mouse = player:GetMouse()
+        local char = player.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
+            -- Teleportiert dich exakt dorthin, wo deine Maus gerade hinzeigt
             char.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
             Library:Notify("Teleported!")
         end
@@ -141,6 +140,7 @@ end})
 
 local DisplayGroup = Tabs.Settings:AddLeftGroupbox("Display")
 
+-- Live Corner Radius
 DisplayGroup:AddSlider("CornerRadius", { 
     Text = "Corner Radius", 
     Default = 17, 
@@ -173,6 +173,7 @@ local ConfigGroup = Tabs.Settings:AddRightGroupbox("Configuration")
 SaveManager:SetLibrary(Library)
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+-- Erstellt automatisch die voll funktionsfähige Config-Liste (inkl. Autoload)
 SaveManager:BuildConfigSection(Tabs.Settings)
 
 local InfoGroup = Tabs.Settings:AddRightGroupbox("Info")
@@ -184,11 +185,11 @@ Library:SetWatermark("Moglimus | Targeting system active and ready")
 Window:SetFooter("https://discord.gg/Fnt5g27A")
 Library.ToggleKeybind = Library.Options.MenuKeybind
 
+-- Datei-Pfade für deine Configs und Themes
 SaveManager:SetFolder("Moglimus/configs")
 ThemeManager:SetFolder("Moglimus/themes")
 
+-- Lädt beim Start automatisch die Config, die der User als "Autoload" markiert hat
 SaveManager:LoadAutoloadConfig()
 
--- ==================== FINAL NOTIFICATION ====================
-local loadTime = string.format("%.2f", os.clock() - startTime) -- Berechnet die Zeit und rundet auf 2 Nachkommastellen
-Library:Notify("Welcome " .. Player.DisplayName .. ", script loaded in " .. loadTime .. "s")
+Library:Notify("Moglimus Loaded Successfully")
