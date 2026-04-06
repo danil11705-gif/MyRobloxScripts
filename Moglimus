@@ -1,62 +1,35 @@
--- // CONFIGURATION //
+-- // MOGLIMUS SECURITY SYSTEM //
 local SCRIPT_KEY = "8m0ugvE1js0o"
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1490562406252806154/Nkj-o9_HbejpTM54QqKWYN-pe2DDiB454PPM8Tn0YtTyBnMnp2bxNmHEkRViaBefL-ZC"
-
-local BANNED_IDS = {
-    2482204501,
-    10567559225,
-    10641564753,
-    4361510752,
-    260597897,
-    9742385779,
-    7227474719
-}
-
-local BANNED_HWIDS = {
-    "HWID Put banned ClientIds here",
-}
-
+local BANNED_IDS = {2482204501, 10567559225, 10641564753, 4361510752, 260597897, 9742385779}
+local BANNED_HWIDS = {"HWID Put banned ClientIds here"}
 local Player = game:GetService("Players").LocalPlayer
 local RBXAnalytics = game:GetService("RbxAnalyticsService")
 local HttpService = game:GetService("HttpService")
-local fakeError = "You have been kicked from the game"
 
-if table.find(BANNED_IDS, Player.UserId) then
-    Player:Kick(fakeError)
-    return
-end
-
-local currentHWID = RBXAnalytics:GetClientId()
-if table.find(BANNED_HWIDS, currentHWID) then
-    Player:Kick(fakeError)
-    return
-end
-
-if _G.EnteredKey ~= SCRIPT_KEY then
-    Player:Kick("Authentication Failed: Access Denied.") 
-    return
-end
-
-local function sendLog()
-    local time = os.date("%X") -- Uhrzeit
-    local date = os.date("%d.%m.%Y") -- Datum
-    
+local function sendLog(status, detail)
+    local color = 0x2ecc71
+    local title = "🚀 **New Execution**"
+    if status == "Banned" then
+        color = 0xff0000
+        title = "🚫 **Access Denied: Banned User**"
+    elseif status == "WrongKey" then
+        color = 0xf1c40f
+        title = "🔑 **Access Denied: Invalid Key**"
+    end
     local data = {
         ["embeds"] = {{
-            ["title"] = "**New Execution**",
-            ["description"] = "A user has successfully loaded the script.",
-            ["color"] = 0x2ecc71, --nice grene
+            ["title"] = title,
+            ["description"] = "Status: **" .. detail .. "**",
+            ["color"] = color,
             ["fields"] = {
-                {["name"] = "👤 Username", ["value"] = "RAW: `" .. Player.Name .. "`", ["inline"] = true},
-                {["name"] = "🏷️ DisplayName", ["value"] = "`" .. Player.DisplayName .. "`", ["inline"] = true},
-                {["name"] = "🆔 UserID", ["value"] = "[" .. Player.UserId .. "](https://www.roblox.com/users/" .. Player.UserId .. "/profile)", ["inline"] = false},
-                {["name"] = "🕒 When", ["value"] = date .. " at " .. time, ["inline"] = false}
+                {["name"] = "👤 User", ["value"] = "`" .. Player.Name .. " (" .. Player.DisplayName .. ")`", ["inline"] = true},
+                {["name"] = "🆔 ID", ["value"] = "[" .. Player.UserId .. "](https://www.roblox.com/users/" .. Player.UserId .. "/profile)", ["inline"] = true},
+                {["name"] = "🕒 Time", ["value"] = os.date("%m.%d.%Y | %X"), ["inline"] = false}
             },
-            ["footer"] = {["text"] = "Moglimus Security • v1.0"},
-            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+            ["footer"] = {["text"] = "Moglimus Security System"}
         }}
     }
-    
     local request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
     if request then
         request({
@@ -68,7 +41,28 @@ local function sendLog()
     end
 end
 
-sendLog()
+local fakeError = "You have been kicked from the game"
+local currentHWID = RBXAnalytics:GetClientId()
+
+if table.find(BANNED_IDS, Player.UserId) then
+    sendLog("Banned", "User is ID-Blacklisted")
+    Player:Kick(fakeError)
+    return
+end
+
+if table.find(BANNED_HWIDS, currentHWID) then
+    sendLog("Banned", "User is Hardware-Blacklisted")
+    Player:Kick(fakeError)
+    return
+end
+
+if _G.EnteredKey ~= SCRIPT_KEY then
+    sendLog("WrongKey", "Used Key: " .. tostring(_G.EnteredKey or "None"))
+    Player:Kick("Authentication Failed: Access Denied.") 
+    return
+end
+
+sendLog("Success", "Script Loaded Successfully")
 print("Welcome, " .. Player.Name)
 
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
@@ -76,7 +70,6 @@ local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
--- FENSTER ERSTELLEN
 local Window = Library:CreateWindow({
     Title = "Barrier Bypass | Obsidian Edition",
     Center = true,
@@ -85,21 +78,17 @@ local Window = Library:CreateWindow({
     NotifySide = "Right",
 })
 
--- TABS
 local Tabs = {
     Main = Window:AddTab("Main", "shield"),
     ['UI Settings'] = Window:AddTab("UI Settings", "settings"),
 }
 
--- GRUPPENBOX
 local MainGroup = Tabs.Main:AddLeftGroupbox("Exploits")
-
--- // --- IGNORE BARRIER LOGIC --- //
 
 MainGroup:AddToggle("NoBarriers", {
     Text = "Ignore Plot Barriers",
     Default = false,
-    Tooltip = "Deaktiviert Kollision für Plot-Barrieren",
+    Tooltip = "Disables collision for plot barriers",
     Callback = function(Value)
         local plots = workspace:FindFirstChild("Plots")
         if plots then
@@ -117,8 +106,6 @@ MainGroup:AddToggle("NoBarriers", {
     end
 })
 
--- // --- THEME & SETTINGS --- //
-
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
 ThemeManager:SetFolder("BarrierBypassV1")
@@ -126,9 +113,8 @@ SaveManager:SetFolder("BarrierBypassV1/configs")
 SaveManager:BuildConfigSection(Tabs["UI Settings"])
 ThemeManager:ApplyToTab(Tabs["UI Settings"])
 
--- Menu Keybind
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu")
 MenuGroup:AddLabel("Menu bind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
 Library.ToggleKeybind = Library.Options.MenuKeybind
 
-Library:Notify("Script geladen! Nur Barrier Bypass aktiv.")
+Library:Notify("Script Loaded! Only Barrier Bypass active.")
