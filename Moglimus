@@ -68,24 +68,33 @@ print("Welcome, " .. Player.Name) --HERREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 
 
--- // MOGLIMUS SECURITY SYSTEM //
+local startTime = os.clock() -- Startet den Timer für die Ladezeit
+local Player = game:GetService("Players").LocalPlayer
+
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+
+Library.Font = Enum.Font.Gotham
+Library.BackgroundColor = Color3.fromHex("#0f0f0f")
+Library.MainColor = Color3.fromHex("#060606")
+Library.AccentColor = Color3.fromHex("#ffffff")
+Library.OutlineColor = Color3.fromHex("#9f9f9f")
+Library.FontColor = Color3.fromHex("#ffffff")
 
 local Window = Library:CreateWindow({
     Title = "Moglimus",
     Center = true,
     AutoShow = true,
     TabGuiNavigation = true,
-    Resizable = true, -- Erlaubt das Verändern der Gesamtgröße
+    Resizable = true,
     NotifySide = "Right",
     ShowCustomCursor = true,
 })
 
 local Tabs = {
-    Home = Window:AddTab("Home", "home"), -- Icon hinzugefügt
+    Home = Window:AddTab("Home", "home"),
     Player = Window:AddTab("Player", "user"),
     Combat = Window:AddTab("Combat", "sword"),
     Invincibility = Window:AddTab("Invincibility", "shield"),
@@ -100,18 +109,59 @@ local Tabs = {
     Settings = Window:AddTab("Settings", "settings"),
 }
 
+-- ==================== KEYBINDS (TELEPORT TEST) ====================
+local KeybindsGroup = Tabs.Keybinds:AddLeftGroupbox("Movement Keybinds")
+
+KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
+    Default = "T",
+    SyncToggleState = false, 
+    Mode = "Hold", 
+    Text = "Teleport", 
+    NoUI = false,
+    Callback = function()
+        local mouse = Player:GetMouse()
+        local char = Player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+            Library:Notify("Teleported!")
+        end
+    end
+})
+
+-- ==================== SETTINGS & DISPLAY ====================
 local SettingsLeft = Tabs.Settings:AddLeftGroupbox("Menu")
 SettingsLeft:AddLabel("Menu keybind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
 
-SettingsLeft:AddToggle("Watermark", { Text = "Watermark", Default = true })
-SettingsLeft:AddToggle("KeybindMenu", { Text = "Open Keybind Menu", Default = false })
-SettingsLeft:AddToggle("UnlockMouse", { Text = "Unlock Mouse", Default = false })
+SettingsLeft:AddToggle("Watermark", { Text = "Watermark", Default = true, Callback = function(Value)
+    Library:SetWatermarkVisibility(Value)
+end})
 
 local DisplayGroup = Tabs.Settings:AddLeftGroupbox("Display")
-DisplayGroup:AddSlider("CornerRadius", { Text = "Corner Radius", Default = 17, Min = 0, Max = 20, Rounding = 0 })
-DisplayGroup:AddToggle("CustomCursor", { Text = "Custom Cursor", Default = true })
+
+DisplayGroup:AddSlider("CornerRadius", { 
+    Text = "Corner Radius", 
+    Default = 17, 
+    Min = 0, 
+    Max = 20, 
+    Rounding = 0,
+    Callback = function(Value)
+        pcall(function()
+            for _, gui in pairs(game.CoreGui:GetDescendants()) do
+                if gui:IsA("UICorner") then
+                    gui.CornerRadius = UDim.new(0, Value)
+                end
+            end
+        end)
+    end
+})
+
+DisplayGroup:AddToggle("CustomCursor", { Text = "Custom Cursor", Default = true, Callback = function(Value)
+    Library.ShowCustomCursor = Value
+end})
+
 DisplayGroup:AddDropdown("DPIScale", { Text = "DPI Scale", Default = "100%", Values = { "50%", "75%", "100%", "125%", "150%" } })
 
+-- ==================== THEMES & CONFIGURATION ====================
 local ThemeGroup = Tabs.Settings:AddLeftGroupbox("Themes")
 ThemeManager:SetLibrary(Library)
 ThemeManager:ApplyToTab(Tabs.Settings)
@@ -126,22 +176,16 @@ local InfoGroup = Tabs.Settings:AddRightGroupbox("Info")
 InfoGroup:AddLabel("https://discord.gg/Fnt5g27A")
 InfoGroup:AddLabel("Status: Active Targeting System")
 
--- Setze Accent Color auf Weiß und Design auf Schwarz/Weiß
+-- ==================== INITIALIZATION ====================
 Library:SetWatermark("Moglimus | Targeting system active and ready")
-Library.AccentColor = Color3.fromRGB(255, 255, 255)
-Library.MainColor = Color3.fromRGB(20, 20, 20)
-Library.BackgroundColor = Color3.fromRGB(15, 15, 15)
-Library.OutlineColor = Color3.fromRGB(40, 40, 40)
-Library.FontColor = Color3.fromRGB(255, 255, 255)
-
--- Footer Text ändern
 Window:SetFooter("https://discord.gg/Fnt5g27A")
-
--- Keybind für das Schließen/Öffnen des Menüs
 Library.ToggleKeybind = Library.Options.MenuKeybind
 
 SaveManager:SetFolder("Moglimus/configs")
 ThemeManager:SetFolder("Moglimus/themes")
+
 SaveManager:LoadAutoloadConfig()
 
-Library:Notify("Moglimus Loaded Successfully")
+-- ==================== FINAL NOTIFICATION ====================
+local loadTime = string.format("%.2f", os.clock() - startTime) -- Berechnet die Zeit und rundet auf 2 Nachkommastellen
+Library:Notify("Welcome " .. Player.DisplayName .. ", script loaded in " .. loadTime .. "s")
