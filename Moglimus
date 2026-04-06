@@ -1,0 +1,34 @@
+local SCRIPT_KEY = "8m0ugvE1js0o"
+local BANNED_IDS = {
+    2482204501,
+    10567559225,
+    10641564753,
+    4361510752,
+    260597897,
+    9742385779,
+    8094443206
+}
+
+local BANNED_HWIDS = {
+    "HWID Put banned ClientIds here",
+}
+
+local Player = game:GetService("Players").LocalPlayer
+local RBXAnalytics = game:GetService("RbxAnalyticsService")
+local fakeError = "You were kicked from this experience: You have been kicked from the game (Error Code: 267)"
+if table.find(BANNED_IDS, Player.UserId) then
+    Player:Kick(fakeError)
+    return
+end
+
+local currentHWID = RBXAnalytics:GetClientId()
+if table.find(BANNED_HWIDS, currentHWID) then
+    Player:Kick(fakeError)
+    return
+end
+if _G.EnteredKey ~= SCRIPT_KEY then
+    Player:Kick("Authentication Failed: Access Denied.") 
+    return
+end
+-- HERE the script starts here
+print("Welcome ")
