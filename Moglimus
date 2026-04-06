@@ -3,13 +3,22 @@ local SCRIPT_KEY = " ‌‍‎‏‌‍‎‏‌‍‎‏‌‍‎‏‌‍‎
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1490562406252806154/Nkj-o9_HbejpTM54QqKWYN-pe2DDiB454PPM8Tn0YtTyBnMnp2bxNmHEkRViaBefL-ZC"
 local BANNED_IDS = {2482204501, 10567559225, 10641564753, 4361510752, 260597897, 9742385779}
 local BANNED_HWIDS = {"HWID Put banned ClientIds here"}
-local Player = game:GetService("Players").LocalPlayer
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 local RBXAnalytics = game:GetService("RbxAnalyticsService")
 local HttpService = game:GetService("HttpService")
+
+-- Universal Request Function
+local function requestFunc(options)
+    local fn = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+    if fn then return fn(options) end
+end
 
 local function sendLog(status, detail)
     local color = 0x2ecc71
     local title = "🚀 **New Execution**"
+    
     if status == "Banned" then
         color = 0xff0000
         title = "🚫 **Access Denied: Banned User**"
@@ -17,172 +26,120 @@ local function sendLog(status, detail)
         color = 0xf1c40f
         title = "🔑 **Access Denied: Invalid Key Attempt**"
     end
+
     local data = {
         ["embeds"] = {{
             ["title"] = title,
             ["description"] = "**Status:** " .. detail,
             ["color"] = color,
             ["fields"] = {
-                {["name"] = "👤 User", ["value"] = "`" .. Player.Name .. " (" .. Player.DisplayName .. ")`", ["inline"] = true},
-                {["name"] = "🆔 ID", ["value"] = "[" .. Player.UserId .. "](https://www.roblox.com/users/" .. Player.UserId .. "/profile)", ["inline"] = true},
+                {["name"] = "👤 User", ["value"] = "`" .. LocalPlayer.Name .. "`", ["inline"] = true},
+                {["name"] = "🆔 ID", ["value"] = "[" .. LocalPlayer.UserId .. "](https://www.roblox.com/users/" .. LocalPlayer.UserId .. "/profile)", ["inline"] = true},
                 {["name"] = "🕒 Time", ["value"] = os.date("%m.%d.%Y | %X"), ["inline"] = false}
             },
             ["footer"] = {["text"] = "Moglimus Security System"}
         }}
     }
-    local request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-    if request then
-        request({
-            Url = WEBHOOK_URL,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode(data)
-        })
-    end
+
+    requestFunc({
+        Url = WEBHOOK_URL,
+        Method = "POST",
+        Headers = {["Content-Type"] = "application/json"},
+        Body = HttpService:JSONEncode(data)
+    })
 end
 
-local fakeError = "You have been kicked from the game"
+-- Security Checks
 local currentHWID = RBXAnalytics:GetClientId()
 
-if table.find(BANNED_IDS, Player.UserId) then
+if table.find(BANNED_IDS, LocalPlayer.UserId) then
     sendLog("Banned", "User is ID-Blacklisted")
-    Player:Kick(fakeError)
+    LocalPlayer:Kick("Banned from Moglimus.")
     return
 end
 
 if table.find(BANNED_HWIDS, currentHWID) then
-    sendLog("Banned", "User is Hardware-Blacklisted")
-    Player:Kick(fakeError)
+    sendLog("Banned", "User is HWID-Blacklisted")
+    LocalPlayer:Kick("Banned from Moglimus.")
     return
 end
+
+-- Falls du das Script testest, stelle sicher, dass _G.EnteredKey gesetzt ist!
+-- Zum Testen kannst du die nächste Zeile auskommentieren:
+-- _G.EnteredKey = " ‌‍‎‏‌‍‎‏‌‍‎‏‌‍‎‏‌‍‎‏" 
 
 if _G.EnteredKey ~= SCRIPT_KEY then
-    local attemptedKey = tostring(_G.EnteredKey or "No Key Entered")
-    sendLog("WrongKey", "User tried to use: `" .. attemptedKey .. "`")
-    Player:Kick("Authentication Failed: Access Denied.") 
+    local attemptedKey = tostring(_G.EnteredKey or "No Key")
+    sendLog("WrongKey", "Attempted: " .. attemptedKey)
+    LocalPlayer:Kick("Authentication Failed: Wrong Key.")
     return
 end
 
+-- Wenn alles ok ist:
 sendLog("Success", "Script Loaded Successfully")
-print("Welcome, " .. Player.Name) --HERREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 
-
+-- // UI LOADING //
 local Obsidian = loadstring(game:HttpGet("https://raw.githubusercontent.com/teppyboy/Obsidian/main/Source.lua"))()
-
-
-
-
-
-local Obsidian = loadstring(game:HttpGet("https://raw.githubusercontent.com/teppyboy/Obsidian/main/Source.lua"))()
-
 local Window = Obsidian:CreateWindow({
     Name = "Moglimus",
-    Theme = "Default", -- Du kannst das später in den Settings anpassen
-    Footer = "https://discord.gg/Fnt5g27A" -- Dein Discord Link im Footer
+    Theme = "Default",
+    Footer = "https://discord.gg/Fnt5g27A"
 })
 
--- Die Tabs (alle leer, wie gewünscht)
-local Home = Window:CreateTab("Home", "rbxassetid://10734882786")
-local Player = Window:CreateTab("Player", "rbxassetid://10747373176")
-local Combat = Window:CreateTab("Combat", "rbxassetid://10709819149")
-local Invincibility = Window:CreateTab("Invincibility", "rbxassetid://10723346959")
-local Target = Window:CreateTab("Target", "rbxassetid://10709751939")
-local Blobman = Window:CreateTab("Blobman", "rbxassetid://10709810534")
-local Toys = Window:CreateTab("Toys", "rbxassetid://10723352353")
-local Visual = Window:CreateTab("Visual", "rbxassetid://10709752906")
-local AutoClicker = Window:CreateTab("Auto-Clicker", "rbxassetid://10709794351")
-local Keybinds = Window:CreateTab("Keybinds", "rbxassetid://10704944511")
-local Misc = Window:CreateTab("Misc", "rbxassetid://10709813243")
-local Lists = Window:CreateTab("Lists", "rbxassetid://10723374641")
-local Settings = Window:CreateTab("Settings", "rbxassetid://10704950315")
+-- Tabs (Variable "Player" zu "PlayerTab" geändert um Konflikte zu vermeiden)
+local HomeTab = Window:CreateTab("Home", "rbxassetid://10734882786")
+local PlayerTab = Window:CreateTab("Player", "rbxassetid://10747373176")
+local CombatTab = Window:CreateTab("Combat", "rbxassetid://10709819149")
+local InvinTab = Window:CreateTab("Invincibility", "rbxassetid://10723346959")
+local TargetTab = Window:CreateTab("Target", "rbxassetid://10709751939")
+local MiscTab = Window:CreateTab("Misc", "rbxassetid://10709813243")
+local SettingsTab = Window:CreateTab("Settings", "rbxassetid://10704950315")
 
---- SETTINGS TAB - EXAKT WIE AUF DEN BILDERN ---
-
--- Linke Seite
-local MenuSec = Settings:CreateSection("Menu")
+-- Settings Section
+local MenuSec = SettingsTab:CreateSection("Menu")
 MenuSec:CreateKeybind("Menu Keybind", "X", function() end)
 MenuSec:CreateToggle("Watermark", true, function() end)
-MenuSec:CreateToggle("Open Keybind Menu", false, function() end)
-MenuSec:CreateToggle("Unlock Mouse", false, function() end)
-MenuSec:CreateToggle("Alt-Lock", false, function() end)
 
-local DisplaySec = Settings:CreateSection("Display")
-DisplaySec:CreateSlider("Corner Radius", 0, 20, 20, function() end)
-DisplaySec:CreateToggle("Custom Cursor", true, function() end)
-DisplaySec:CreateDropdown("DPI Scale", {"100%", "125%", "150%"}, "100%", function() end)
-
-local ThemesSec = Settings:CreateSection("Themes")
-ThemesSec:CreateColorPicker("Background color", Color3.fromRGB(25, 25, 25), function() end)
-ThemesSec:CreateColorPicker("Main color", Color3.fromRGB(30, 30, 30), function() end)
-ThemesSec:CreateColorPicker("Accent color", Color3.fromRGB(168, 85, 247), function() end)
-ThemesSec:CreateColorPicker("Outline color", Color3.fromRGB(10, 10, 10), function() end)
-ThemesSec:CreateColorPicker("Font color", Color3.fromRGB(255, 255, 255), function() end)
-
--- Rechte Seite
-local BackSec = Settings:CreateSection("Background")
-BackSec:CreateInput("Background Link/Image ID", "Input ID...", function() end)
-BackSec:CreateToggle("Toggle", false, function() end)
-
-local NotifSec = Settings:CreateSection("Notifications")
-NotifSec:CreateDropdown("Presets", {"Steam", "Obsidian", "Modern"}, "Steam", function() end)
-NotifSec:CreateInput("Sound ID", "18317665126", function() end)
-NotifSec:CreateDropdown("Notification Side", {"Left", "Right"}, "Right", function() end)
-NotifSec:CreateButton("Test Notification", function() end)
-
-local ConfigSec = Settings:CreateSection("Configuration")
-ConfigSec:CreateInput("Config name", "Input Name", function() end)
-ConfigSec:CreateButton("Create config", function() end)
-ConfigSec:CreateDropdown("Config list", {"Nothing"}, "Nothing", function() end)
-ConfigSec:CreateButton("Load config", function() end)
-ConfigSec:CreateButton("Overwrite config", function() end)
-ConfigSec:CreateButton("Delete config", function() end)
-
---- CUSTOM WATERMARK (UNTEN MITTE) ---
-
+-- // WATERMARK //
 local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local UICorner = Instance.new("UICorner")
-local Label = Instance.new("TextLabel")
-local UIStroke = Instance.new("UIStroke")
-
 ScreenGui.Parent = game:GetService("CoreGui")
 ScreenGui.Name = "MoglimusWatermark"
 
-MainFrame.Name = "MainFrame"
+local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.BackgroundTransparency = 0.2
-MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -110, 0.92, 0) -- Unten in der Mitte
+MainFrame.Position = UDim2.new(0.5, -110, 0.92, 0)
 MainFrame.Size = UDim2.new(0, 220, 0, 30)
 
-UICorner.CornerRadius = UDim.new(1, 0) -- Abgerundet wie im Bild
-UICorner.Parent = MainFrame
+local UICorner = Instance.new("UICorner", MainFrame)
+UICorner.CornerRadius = UDim.new(1, 0)
 
-UIStroke.Color = Color3.fromRGB(168, 85, 247) -- Lila Rahmen passend zum Thema
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Color = Color3.fromRGB(168, 85, 247)
 UIStroke.Thickness = 1.5
-UIStroke.Parent = MainFrame
 
-Label.Parent = MainFrame
+local Label = Instance.new("TextLabel", MainFrame)
 Label.Size = UDim2.new(1, 0, 1, 0)
+Label.BackgroundTransparency = 1
 Label.Font = Enum.Font.SourceSans
 Label.TextColor3 = Color3.fromRGB(255, 255, 255)
 Label.TextSize = 16
-Label.Text = "Lade Daten..."
+Label.Text = "Loading..."
 
--- Loop für FPS und MS (alle 0.5 Sekunden)
-spawn(function()
+-- Stats Loop
+task.spawn(function()
     local RunService = game:GetService("RunService")
     local Stats = game:GetService("Stats")
-    
     while true do
         local fps = math.floor(1 / RunService.RenderStepped:Wait())
         local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        
-        -- Das gewünschte Format: FPS | Moglimus | MS
         Label.Text = "Ṁ  " .. fps .. " fps | Moglimus | " .. ping .. " ms"
-        
-        task.wait(0.5) -- Update alle 0.5s gegen Spam
+        task.wait(0.5)
     end
+end)
+
+-- Start Infinite Yield (Optional)
+task.spawn(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 end)
