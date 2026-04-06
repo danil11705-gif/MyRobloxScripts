@@ -31,4 +31,4 @@ if _G.EnteredKey ~= SCRIPT_KEY then
     return
 end
 -- HERE the script starts here
-print("Welcome ")
+print("Welcome")
