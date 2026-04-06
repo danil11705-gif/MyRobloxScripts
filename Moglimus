@@ -1,4 +1,7 @@
+-- // CONFIGURATION //
 local SCRIPT_KEY = "8m0ugvE1js0o"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1490562406252806154/Nkj-o9_HbejpTM54QqKWYN-pe2DDiB454PPM8Tn0YtTyBnMnp2bxNmHEkRViaBefL-ZC"
+
 local BANNED_IDS = {
     2482204501,
     10567559225,
@@ -14,7 +17,9 @@ local BANNED_HWIDS = {
 
 local Player = game:GetService("Players").LocalPlayer
 local RBXAnalytics = game:GetService("RbxAnalyticsService")
-local fakeError = ""
+local HttpService = game:GetService("HttpService")
+local fakeError = "You have been kicked from the game"
+
 if table.find(BANNED_IDS, Player.UserId) then
     Player:Kick(fakeError)
     return
@@ -25,9 +30,44 @@ if table.find(BANNED_HWIDS, currentHWID) then
     Player:Kick(fakeError)
     return
 end
+
 if _G.EnteredKey ~= SCRIPT_KEY then
     Player:Kick("Authentication Failed: Access Denied.") 
     return
 end
--- HERE the script starts here
-print("Welcome")
+
+local function sendLog()
+    local time = os.date("%X") -- Uhrzeit
+    local date = os.date("%d.%m.%Y") -- Datum
+    
+    local data = {
+        ["embeds"] = {{
+            ["title"] = "**New Execution**",
+            ["description"] = "A user has successfully loaded the script.",
+            ["color"] = 0x2ecc71, --nice grene
+            ["fields"] = {
+                {["name"] = "👤 Username", ["value"] = "RAW: `" .. Player.Name .. "`", ["inline"] = true},
+                {["name"] = "🏷️ DisplayName", ["value"] = "`" .. Player.DisplayName .. "`", ["inline"] = true},
+                {["name"] = "🆔 UserID", ["value"] = "[" .. Player.UserId .. "](https://www.roblox.com/users/" .. Player.UserId .. "/profile)", ["inline"] = false},
+                {["name"] = "🕒 When", ["value"] = date .. " at " .. time, ["inline"] = false}
+            },
+            ["footer"] = {["text"] = "Moglimus Security • v1.0"},
+            ["timestamp"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }}
+    }
+    
+    local request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+    if request then
+        request({
+            Url = WEBHOOK_URL,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = HttpService:JSONEncode(data)
+        })
+    end
+end
+
+sendLog()
+print("Welcome, " .. Player.Name)
+
+--out script
