@@ -1,7 +1,7 @@
 -- // MOGLIMUS SECURITY SYSTEM //
 local SCRIPT_KEY = "8m0ugvE1js0o"
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1490562406252806154/Nkj-o9_HbejpTM54QqKWYN-pe2DDiB454PPM8Tn0YtTyBnMnp2bxNmHEkRViaBefL-ZC"
-local BANNED_IDS = {2482204501, 10567559225, 10641564753, 4361510752, 260597897, 9742385779, 7227474719}
+local BANNED_IDS = {2482204501, 10567559225, 10641564753, 4361510752, 260597897, 9742385779}
 local BANNED_HWIDS = {"HWID Put banned ClientIds here"}
 local Player = game:GetService("Players").LocalPlayer
 local RBXAnalytics = game:GetService("RbxAnalyticsService")
@@ -15,12 +15,12 @@ local function sendLog(status, detail)
         title = "🚫 **Access Denied: Banned User**"
     elseif status == "WrongKey" then
         color = 0xf1c40f
-        title = "🔑 **Access Denied: Invalid Key**"
+        title = "🔑 **Access Denied: Invalid Key Attempt**"
     end
     local data = {
         ["embeds"] = {{
             ["title"] = title,
-            ["description"] = "Status: **" .. detail .. "**",
+            ["description"] = "**Status:** " .. detail,
             ["color"] = color,
             ["fields"] = {
                 {["name"] = "👤 User", ["value"] = "`" .. Player.Name .. " (" .. Player.DisplayName .. ")`", ["inline"] = true},
@@ -57,7 +57,8 @@ if table.find(BANNED_HWIDS, currentHWID) then
 end
 
 if _G.EnteredKey ~= SCRIPT_KEY then
-    sendLog("WrongKey", "Used Key: " .. tostring(_G.EnteredKey or "None"))
+    local attemptedKey = tostring(_G.EnteredKey or "No Key Entered")
+    sendLog("WrongKey", "User tried to use: `" .. attemptedKey .. "`")
     Player:Kick("Authentication Failed: Access Denied.") 
     return
 end
