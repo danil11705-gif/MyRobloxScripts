@@ -5,8 +5,7 @@ local BANNED_IDS = {
     10641564753,
     4361510752,
     260597897,
-    9742385779,
-    8094443206
+    9742385779
 }
 
 local BANNED_HWIDS = {
@@ -15,7 +14,7 @@ local BANNED_HWIDS = {
 
 local Player = game:GetService("Players").LocalPlayer
 local RBXAnalytics = game:GetService("RbxAnalyticsService")
-local fakeError = "You have been kicked from the game"
+local fakeError = ""
 if table.find(BANNED_IDS, Player.UserId) then
     Player:Kick(fakeError)
     return
