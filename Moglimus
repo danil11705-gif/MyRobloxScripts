@@ -67,7 +67,7 @@ sendLog("Success", "Script Loaded Successfully")
 print("Welcome, " .. Player.Name) --HERREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
 
--- // START UI SCRIPT //
+-- // AB HIER GEFIXTER UI TEIL //
 local startTime = os.clock()
 local RunService = game:GetService("RunService")
 local Stats = game:GetService("Stats")
@@ -86,23 +86,20 @@ local Window = Library:CreateWindow({
     ShowCustomCursor = false,
 })
 
--- Notification Sound Helper
+-- Sound Helper für Notifications
 local function playNotifySound()
-    local soundId = Library.Options.SoundId and Library.Options.SoundId.Value or "18317665126"
-    local s = Instance.new("Sound", game.Workspace)
-    s.SoundId = "rbxassetid://" .. soundId:match("%d+")
+    local soundId = "18317665126"
+    if Library.Options.SoundId then
+        soundId = Library.Options.SoundId.Value:match("%d+") or "18317665126"
+    end
+    local s = Instance.new("Sound", game:GetService("SoundService"))
+    s.SoundId = "rbxassetid://" .. soundId
     s:Play()
-    s.Ended:Connect(function() s:Destroy() end)
-end
-
--- Custom Notification wrapper to include sound
-local function Notify(text)
-    Library:Notify(text)
-    playNotifySound()
+    game:GetService("Debris"):AddItem(s, 2)
 end
 
 local Tabs = {
-    Home = Window:AddTab("Home", "home"), -- "home" sorgt für ein farbiges Icon statt weißem Kreis
+    Home = Window:AddTab("Home", "home"), -- "home" sorgt dafür, dass das Icon Lila (#7d55ff) wird
     Player = Window:AddTab("Player", "user"),
     Combat = Window:AddTab("Combat", "sword"),
     Invincibility = Window:AddTab("Invincibility", "shield"),
@@ -118,13 +115,12 @@ local Tabs = {
 }
 
 local MovementGroup = Tabs.Keybinds:AddLeftGroupbox("Movement")
--- Geändert: KeyPicker ist jetzt ein direktes Element für Keybind-Nutzung
-MovementGroup:AddKeyPicker("TeleportKey", {
+-- FIX: Keypicker für Teleport (KeyPress statt Toggle)
+MovementGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
     Default = "None",
-    SyncToggleState = false,
-    Mode = "KeyPress", -- Verwendet Keybind (einmal drücken) statt Toggle
-    Text = "Teleport to Cursor",
     NoUI = false,
+    Text = "Teleport",
+    Mode = "KeyPress", 
     Callback = function()
         local mouse = Player:GetMouse()
         if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
@@ -141,43 +137,44 @@ MenuSettings:AddToggle("ShowKeybinds", { Text = "Show Keybind Menu", Default = f
 MenuSettings:AddToggle("Watermark", { Text = "Show Watermark", Default = true, Callback = function(Value) Library:SetWatermarkVisibility(Value) end })
 
 local VisualSettings = Tabs.Settings:AddLeftGroupbox("Display")
+-- FIX: Corner Radius
 VisualSettings:AddSlider("CornerRadius", { 
     Text = "Corner Radius", Default = 15, Min = 0, Max = 15, Rounding = 0,
     Callback = function(Value)
         pcall(function()
-            for _, obj in pairs(game:GetService("CoreGui"):GetDescendants()) do
-                if obj:IsA("UICorner") and obj:IsDescendantOf(Window.Main) then 
-                    obj.CornerRadius = UDim.new(0, Value) 
-                end
+            for _, obj in pairs(Window.Main:GetDescendants()) do
+                if obj:IsA("UICorner") then obj.CornerRadius = UDim.new(0, Value) end
             end
         end)
     end
 })
 
+-- FIX: UI Scale (DPI)
 VisualSettings:AddDropdown("UIScale", { 
     Text = "UI Scale (DPI)", Default = "100%", Values = { "50%", "75%", "100%", "125%", "150%" },
     Callback = function(Value)
         local scale = tonumber(Value:match("%d+")) / 100
-        local uiScaleObj = Window.Main:FindFirstChildOfClass("UIScale") or Instance.new("UIScale", Window.Main)
-        uiScaleObj.Scale = scale
+        local uiScale = Window.Main:FindFirstChildOfClass("UIScale") or Instance.new("UIScale", Window.Main)
+        uiScale.Scale = scale
     end
 })
 
 local BgGroup = Tabs.Settings:AddRightGroupbox("Background")
+-- FIX: Image ID
 BgGroup:AddInput("BgId", { 
     Text = "Image ID", 
     Default = "", 
     Callback = function(Value) 
         local id = Value:match("%d+")
-        if id and Window.Main:FindFirstChild("Background") then 
-            Window.Main.Background.Image = "rbxassetid://" .. id 
-        end 
+        if id and Window.Main:FindFirstChild("Background") then
+            Window.Main.Background.Image = "rbxassetid://" .. id
+        end
     end 
 })
 
 local NotifyGroup = Tabs.Settings:AddRightGroupbox("Notifications")
-NotifyGroup:AddDropdown("NotifySide", { Text = "Position", Default = "Right", Values = { "TopRight", "BottomRight", "TopLeft", "BottomLeft" }, Callback = function(Value) Window.NotifySide = Value Notify("Position changed to " .. Value) end })
-NotifyGroup:AddInput("SoundId", { Text = "Sound ID", Default = "18317665126", Callback = function(V) Notify("Sound ID updated!") end })
+NotifyGroup:AddDropdown("NotifySide", { Text = "Position", Default = "Right", Values = { "TopRight", "BottomRight", "TopLeft", "BottomLeft" }, Callback = function(Value) Window.NotifySide = Value Library:Notify("Position changed to " .. Value) playNotifySound() end })
+NotifyGroup:AddInput("SoundId", { Text = "Sound ID", Default = "18317665126", Callback = function(V) Library:Notify("Sound ID updated!") playNotifySound() end })
 
 ThemeManager:SetLibrary(Library)
 ThemeManager:ApplyToTab(Tabs.Settings)
@@ -186,12 +183,13 @@ SaveManager:BuildConfigSection(Tabs.Settings)
 
 Window:SetFooter("https://discord.gg/Fnt5g27A")
 
--- Stats Loop (FPS/MS) alle 0.5 Sekunden
+-- FIX: Watermark FPS & MS Loop (0.5s Update)
 task.spawn(function()
-    while task.wait(0.5) do
+    while true do
         local fps = math.floor(Stats.Workspace.Heartbeat:GetValue())
         local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
         Library:SetWatermark(fps .. " FPS  |  Moglimus  |  " .. ping .. " MS")
+        task.wait(0.5)
     end
 end)
 
@@ -200,4 +198,5 @@ ThemeManager:SetFolder("Moglimus/themes")
 SaveManager:LoadAutoloadConfig()
 
 local loadTime = string.format("%.2f", os.clock() - startTime)
-Notify("Welcome " .. Player.DisplayName .. ", loaded in " .. loadTime .. "s")
+Library:Notify("Welcome " .. Player.DisplayName .. ", loaded in " .. loadTime .. "s")
+playNotifySound()
