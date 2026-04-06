@@ -1,5 +1,5 @@
 -- // MOGLIMUS SECURITY SYSTEM //
-local SCRIPT_KEY = "                     "
+local SCRIPT_KEY = "а‌а‌а‌а‌а‌а‌а‌а‌а‌а‌а‌а‌а‌а‌а‌а‌а"
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1490562406252806154/Nkj-o9_HbejpTM54QqKWYN-pe2DDiB454PPM8Tn0YtTyBnMnp2bxNmHEkRViaBefL-ZC"
 local BANNED_IDS = {2482204501, 10567559225, 10641564753, 4361510752, 260597897, 9742385779}
 local BANNED_HWIDS = {"HWID Put banned ClientIds here"}
