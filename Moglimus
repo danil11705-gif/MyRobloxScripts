@@ -15,7 +15,7 @@ local BANNED_HWIDS = {
 
 local Player = game:GetService("Players").LocalPlayer
 local RBXAnalytics = game:GetService("RbxAnalyticsService")
-local fakeError = "You were kicked from this experience: You have been kicked from the game (Error Code: 267)"
+local fakeError = "You have been kicked from the game"
 if table.find(BANNED_IDS, Player.UserId) then
     Player:Kick(fakeError)
     return
