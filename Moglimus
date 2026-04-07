@@ -1,262 +1,506 @@
 local SCRIPT_KEY = " ‌‍‎‏‌‍‎‏‌‍‎‏‌‍‎‏‌‍‎‏"
+
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1490562406252806154/Nkj-o9_HbejpTM54QqKWYN-pe2DDiB454PPM8Tn0YtTyBnMnp2bxNmHEkRViaBefL-ZC"
+
 local BANNED_IDS = {2482204501, 10567559225, 10641564753, 4361510752, 260597897, 9742385779, 2482204501}
+
 local BANNED_HWIDS = {"HWID Put banned ClientIds here"}
+
 local Player = game:GetService("Players").LocalPlayer
+
 local RBXAnalytics = game:GetService("RbxAnalyticsService")
+
 local HttpService = game:GetService("HttpService")
 
+
+
 local function sendLog(status, detail)
+
     local color = 0x2ecc71
+
     local title = "🚀 **New Execution**"
+
     if status == "Banned" then
+
         color = 0xff0000
+
         title = "🚫 **Access Denied: Banned User**"
+
     elseif status == "WrongKey" then
+
         color = 0xf1c40f
+
         title = "🔑 **Access Denied: Invalid Key Attempt**"
+
     end
+
     local data = {
+
         ["embeds"] = {{
+
             ["title"] = title,
+
             ["description"] = "**Status:** " .. detail,
+
             ["color"] = color,
+
             ["fields"] = {
+
                 {["name"] = "👤 User", ["value"] = "`" .. Player.Name .. " (" .. Player.DisplayName .. ")`", ["inline"] = true},
+
                 {["name"] = "🆔 ID", ["value"] = "[" .. Player.UserId .. "](https://www.roblox.com/users/" .. Player.UserId .. "/profile)", ["inline"] = true},
+
                 {["name"] = "🕒 Time", ["value"] = os.date("%m.%d.%Y | %X"), ["inline"] = false}
+
             },
+
             ["footer"] = {["text"] = "Moglimus Security System"}
+
         }}
+
     }
+
     local request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+
     if request then
+
         request({
+
             Url = WEBHOOK_URL,
+
             Method = "POST",
+
             Headers = {["Content-Type"] = "application/json"},
+
             Body = HttpService:JSONEncode(data)
+
         })
+
     end
+
 end
+
+
 
 local fakeError = "You have been kicked from the game"
+
 local currentHWID = RBXAnalytics:GetClientId()
 
+
+
 if table.find(BANNED_IDS, Player.UserId) then
+
     sendLog("Banned", "User is ID-Blacklisted")
+
     Player:Kick(fakeError)
+
     return
+
 end
+
+
 
 if table.find(BANNED_HWIDS, currentHWID) then
+
     sendLog("Banned", "User is Hardware-Blacklisted")
+
     Player:Kick(fakeError)
+
     return
+
 end
 
+
+
 if _G.EnteredKey ~= SCRIPT_KEY then
+
     local attemptedKey = tostring(_G.EnteredKey or "No Key Entered")
+
     sendLog("WrongKey", "User tried to use: `" .. attemptedKey .. "`")
+
     Player:Kick("Authentication Failed: Access Denied.") 
+
     return
+
 end
+
 sendLog("Success", "Script Loaded Successfully")
+
 print("Welcome, " .. Player.Name)
+
 loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+
 --EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 
 
 
 
+
+
+
+
+
 -- // MOGLIMUS SECURITY SYSTEM //
+
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
+
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
+
+
 -- Standard-Farben & Font definieren, BEVOR das Menü erstellt wird (damit neue User es direkt so sehen)
+
 Library.Font = Enum.Font.Gotham
+
 Library.BackgroundColor = Color3.fromHex("#0f0f0f")
+
 Library.MainColor = Color3.fromHex("#060606")
+
 Library.AccentColor = Color3.fromHex("#ffffff")
+
 Library.OutlineColor = Color3.fromHex("#9f9f9f")
+
 Library.FontColor = Color3.fromHex("#ffffff")
 
+
+
 local Window = Library:CreateWindow({
+
     Title = "Moglimus",
+
     Center = true,
+
     AutoShow = true,
+
     TabGuiNavigation = true,
+
     Resizable = true, -- Erlaubt das Skalieren des UIs
+
     NotifySide = "Right",
+
     ShowCustomCursor = true,
+
 })
 
+
+
 local Tabs = {
+
     Home = Window:AddTab("Home", "home"), -- "home" ruft das Haus-Icon ab
+
     Player = Window:AddTab("Player", "user"),
+
     Combat = Window:AddTab("Combat", "sword"),
+
     Invincibility = Window:AddTab("Invincibility", "shield"),
+
     Target = Window:AddTab("Target", "target"),
+
     Blobman = Window:AddTab("Blobman", "info"),
+
     Toys = Window:AddTab("Toys", "package"),
+
     Visual = Window:AddTab("Visual", "eye"),
+
     ['Auto-Clicker'] = Window:AddTab("Auto-Clicker", "mouse-pointer"),
+
     Keybinds = Window:AddTab("Keybinds", "keyboard"),
+
     Misc = Window:AddTab("Misc", "list"),
+
     Lists = Window:AddTab("Lists", "file-text"),
+
     Settings = Window:AddTab("Settings", "settings"),
+
 }
 
+
+
 local KeybindsGroup = Tabs.Keybinds:AddLeftGroupbox("Movement Keybinds")
+
+
 
 local TargetGroup = Tabs.Target:AddLeftGroupbox("Target")
 
 local PlayerDropdown = TargetGroup:AddDropdown("SelectedTarget", {
+
     Text = "Select Targets",
+
     Default = "", 
+
     Values = {}, 
-    Multi = true,
+
+    Multi = true, -- Erlaubt Auswahl mehrerer Spieler gleichzeitig
+
     Placeholder = "Search Player...",
+
 })
 
+
+
 local function updatePlayerList()
+
     local players = {}
+
     for _, v in pairs(game:GetService("Players"):GetPlayers()) do
+
         table.insert(players, v.Name .. " (" .. v.DisplayName .. ")")
+
     end
+
     PlayerDropdown:SetValues(players)
+
 end
+
 game:GetService("Players").PlayerAdded:Connect(updatePlayerList)
+
 game:GetService("Players").PlayerRemoving:Connect(updatePlayerList)
+
 updatePlayerList()
 
+
+
+TargetGroup:AddLabel("Select Target")
+
+
+
 local ApplyGroup = Tabs.Target:AddLeftGroupbox("Apply")
+
 ApplyGroup:AddToggle("LoopApplySelected", { Text = "Loop Apply Method Selected", Default = false })
+
 ApplyGroup:AddToggle("LoopApplyServer", { Text = "Loop Apply Method Server", Default = false })
-ApplyGroup:AddDivider()
+
 ApplyGroup:AddButton({ Text = "Apply Method Selected", Func = function() end })
+
 ApplyGroup:AddButton({ Text = "Apply Method Server", Func = function() end })
+
+
 
 local MethodGroup = Tabs.Target:AddRightGroupbox("Method Settings")
 
--- Container für die Sektionen erstellen
-local KickSettingsLabel = MethodGroup:AddLabel("Kick Settings")
-local KillSettingsLabel = MethodGroup:AddLabel("Kill Settings")
-
-local DelayDropdown = MethodGroup:AddDropdown("DelayMode", { Text = "Delay Mode", Default = "Normal", Values = { "Normal", "Fast, Not Good" } })
-local RagdollToggle = MethodGroup:AddToggle("ShouldRagdoll", { Text = "Should Ragdoll", Default = true })
-local AntiKickToggle = MethodGroup:AddToggle("RemoveAntiKick", { Text = "Remove Anti-Kick", Default = true })
-local XSlider = MethodGroup:AddSlider("XOffset", { Text = "X Offset", Default = 0, Min = -20, Max = 20, Rounding = 0 })
-local YSlider = MethodGroup:AddSlider("YOffset", { Text = "Y Offset", Default = 15, Min = -20, Max = 20, Rounding = 0 })
-local ZSlider = MethodGroup:AddSlider("ZOffset", { Text = "Z Offset", Default = 0, Min = -20, Max = 20, Rounding = 0 })
-local VoidButton = MethodGroup:AddButton({ Text = "TP To Void Platform", Func = function() end })
-
-local KillModeDropdown = MethodGroup:AddDropdown("KillMode", { Text = "Mode", Default = "", Multi = true, Values = { "Ragdoll Kill", "Best", "Void", "Kill" }, Placeholder = "Search Modes..." })
-
-local function updateVisibility(methodTable)
-    local isKickActive = methodTable["LoopKick"]
-    local isKillActive = methodTable["LoopKill"]
-
-    KickSettingsLabel.Visible = isKickActive
-    DelayDropdown.Visible = isKickActive
-    RagdollToggle.Visible = isKickActive
-    AntiKickToggle.Visible = isKickActive
-    XSlider.Visible = isKickActive
-    YSlider.Visible = isKickActive
-    ZSlider.Visible = isKickActive
-    VoidButton.Visible = isKickActive
-
-    KillSettingsLabel.Visible = isKillActive
-    KillModeDropdown.Visible = isKillActive
-end
-
 MethodGroup:AddDropdown("MethodDropdown", {
+
     Text = "Methods",
+
     Default = "",
+
     Multi = true,
+
     Values = { "LoopKill", "LoopKick" },
+
     Placeholder = "Search Methods...",
-    Callback = function(Value)
-        updateVisibility(Value)
-    end
+
 })
 
-updateVisibility({})
+
+
+MethodGroup:AddLabel("Kick Settings")
+
+MethodGroup:AddDropdown("DelayMode", {
+
+    Text = "Delay Mode",
+
+    Default = "Normal",
+
+    Values = { "Normal", "Fast, Not Good" },
+
+})
+
+
+
+MethodGroup:AddToggle("ShouldRagdoll", { Text = "Should Ragdoll", Default = true })
+
+MethodGroup:AddToggle("RemoveAntiKick", { Text = "Remove Anti-Kick", Default = true })
+
+
+
+MethodGroup:AddSlider("XOffset", { Text = "X Offset", Default = 0, Min = -20, Max = 20, Rounding = 0 })
+
+MethodGroup:AddSlider("YOffset", { Text = "Y Offset", Default = 15, Min = -20, Max = 20, Rounding = 0 })
+
+MethodGroup:AddSlider("ZOffset", { Text = "Z Offset", Default = 0, Min = -20, Max = 20, Rounding = 0 })
+
+
+
+MethodGroup:AddButton({ Text = "TP To Void Platform", Func = function() end })
+
+
+
+MethodGroup:AddLabel("Kill Settings")
+
+MethodGroup:AddDropdown("KillMode", {
+
+    Text = "Mode",
+
+    Default = "",
+
+    Multi = true,
+
+    Values = { "Ragdoll Kill", "Best", "Void", "Kill" },
+
+    Placeholder = "Search Modes...",
+
+})
+
+
 
 KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
+
     Default = "T",
+
     SyncToggleState = false, 
+
     Mode = "Hold", 
+
     Text = "Teleport", 
+
     NoUI = false,
+
     Callback = function()
+
         local player = game:GetService("Players").LocalPlayer
+
         local mouse = player:GetMouse()
+
         local char = player.Character
+
         if char and char:FindFirstChild("HumanoidRootPart") then
+
             char.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+
             Library:Notify("Teleported!")
+
         end
+
     end
+
 })
+
 local SettingsLeft = Tabs.Settings:AddLeftGroupbox("Menu")
+
 SettingsLeft:AddLabel("Menu keybind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
 
+
+
 SettingsLeft:AddToggle("Watermark", { Text = "Watermark", Default = true, Callback = function(Value)
+
     Library:SetWatermarkVisibility(Value)
+
 end})
+
+
 
 local DisplayGroup = Tabs.Settings:AddLeftGroupbox("Display")
 
+
+
+-- Live Corner Radius
+
 DisplayGroup:AddSlider("CornerRadius", { 
+
     Text = "Corner Radius", 
+
     Default = 17, 
+
     Min = 0, 
+
     Max = 20, 
+
     Rounding = 0,
+
     Callback = function(Value)
+
         pcall(function()
+
             for _, gui in pairs(game.CoreGui:GetDescendants()) do
+
                 if gui:IsA("UICorner") then
+
                     gui.CornerRadius = UDim.new(0, Value)
+
                 end
+
             end
+
         end)
+
     end
+
 })
 
+
+
 DisplayGroup:AddToggle("CustomCursor", { Text = "Custom Cursor", Default = true, Callback = function(Value)
+
     Library.ShowCustomCursor = Value
+
 end})
+
+
 
 DisplayGroup:AddDropdown("DPIScale", { Text = "DPI Scale", Default = "100%", Values = { "50%", "75%", "100%", "125%", "150%" } })
 
+
+
+-- ==================== THEMES & CONFIGURATION ====================
+
 local ThemeGroup = Tabs.Settings:AddLeftGroupbox("Themes")
+
 ThemeManager:SetLibrary(Library)
+
 ThemeManager:ApplyToTab(Tabs.Settings)
 
+
+
 local ConfigGroup = Tabs.Settings:AddRightGroupbox("Configuration")
+
 SaveManager:SetLibrary(Library)
+
 SaveManager:IgnoreThemeSettings()
+
 SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+
+-- Erstellt automatisch die voll funktionsfähige Config-Liste (inkl. Autoload)
+
 SaveManager:BuildConfigSection(Tabs.Settings)
 
+
+
 local InfoGroup = Tabs.Settings:AddRightGroupbox("Info")
+
 InfoGroup:AddLabel("https://discord.gg/Fnt5g27A")
+
 InfoGroup:AddLabel("Status: Active Targeting System")
 
+
+
 -- ==================== INITIALIZATION ====================
+
 Library:SetWatermark("Moglimus | Targeting system active and ready")
+
 Window:SetFooter("https://discord.gg/Fnt5g27A")
+
 Library.ToggleKeybind = Library.Options.MenuKeybind
 
+
+
 -- Datei-Pfade für deine Configs und Themes
+
 SaveManager:SetFolder("Moglimus/configs")
+
 ThemeManager:SetFolder("Moglimus/themes")
 
+
+
 -- Lädt beim Start automatisch die Config, die der User als "Autoload" markiert hat
+
 SaveManager:LoadAutoloadConfig()
 
+
+
 Library:Notify("Moglimus Loaded Successfully")
+
