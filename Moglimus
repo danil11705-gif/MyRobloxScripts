@@ -112,11 +112,12 @@ local Tabs = {
 local KeybindsGroup = Tabs.Keybinds:AddLeftGroupbox("Movement Keybinds")
 
 local TargetGroup = Tabs.Target:AddLeftGroupbox("Target")
+
 local PlayerDropdown = TargetGroup:AddDropdown("SelectedTarget", {
     Text = "Select Targets",
     Default = "", 
     Values = {}, 
-    Multi = true, -- Erlaubt Auswahl mehrerer Spieler gleichzeitig
+    Multi = true,
     Placeholder = "Search Player...",
 })
 
@@ -131,47 +132,58 @@ game:GetService("Players").PlayerAdded:Connect(updatePlayerList)
 game:GetService("Players").PlayerRemoving:Connect(updatePlayerList)
 updatePlayerList()
 
-TargetGroup:AddLabel("Select Target")
-
 local ApplyGroup = Tabs.Target:AddLeftGroupbox("Apply")
 ApplyGroup:AddToggle("LoopApplySelected", { Text = "Loop Apply Method Selected", Default = false })
 ApplyGroup:AddToggle("LoopApplyServer", { Text = "Loop Apply Method Server", Default = false })
+ApplyGroup:AddDivider()
 ApplyGroup:AddButton({ Text = "Apply Method Selected", Func = function() end })
 ApplyGroup:AddButton({ Text = "Apply Method Server", Func = function() end })
 
 local MethodGroup = Tabs.Target:AddRightGroupbox("Method Settings")
+
+-- Container für die Sektionen erstellen
+local KickSettingsLabel = MethodGroup:AddLabel("Kick Settings")
+local KillSettingsLabel = MethodGroup:AddLabel("Kill Settings")
+
+local DelayDropdown = MethodGroup:AddDropdown("DelayMode", { Text = "Delay Mode", Default = "Normal", Values = { "Normal", "Fast, Not Good" } })
+local RagdollToggle = MethodGroup:AddToggle("ShouldRagdoll", { Text = "Should Ragdoll", Default = true })
+local AntiKickToggle = MethodGroup:AddToggle("RemoveAntiKick", { Text = "Remove Anti-Kick", Default = true })
+local XSlider = MethodGroup:AddSlider("XOffset", { Text = "X Offset", Default = 0, Min = -20, Max = 20, Rounding = 0 })
+local YSlider = MethodGroup:AddSlider("YOffset", { Text = "Y Offset", Default = 15, Min = -20, Max = 20, Rounding = 0 })
+local ZSlider = MethodGroup:AddSlider("ZOffset", { Text = "Z Offset", Default = 0, Min = -20, Max = 20, Rounding = 0 })
+local VoidButton = MethodGroup:AddButton({ Text = "TP To Void Platform", Func = function() end })
+
+local KillModeDropdown = MethodGroup:AddDropdown("KillMode", { Text = "Mode", Default = "", Multi = true, Values = { "Ragdoll Kill", "Best", "Void", "Kill" }, Placeholder = "Search Modes..." })
+
+local function updateVisibility(methodTable)
+    local isKickActive = methodTable["LoopKick"]
+    local isKillActive = methodTable["LoopKill"]
+
+    KickSettingsLabel.Visible = isKickActive
+    DelayDropdown.Visible = isKickActive
+    RagdollToggle.Visible = isKickActive
+    AntiKickToggle.Visible = isKickActive
+    XSlider.Visible = isKickActive
+    YSlider.Visible = isKickActive
+    ZSlider.Visible = isKickActive
+    VoidButton.Visible = isKickActive
+
+    KillSettingsLabel.Visible = isKillActive
+    KillModeDropdown.Visible = isKillActive
+end
+
 MethodGroup:AddDropdown("MethodDropdown", {
     Text = "Methods",
     Default = "",
     Multi = true,
     Values = { "LoopKill", "LoopKick" },
     Placeholder = "Search Methods...",
+    Callback = function(Value)
+        updateVisibility(Value)
+    end
 })
 
-MethodGroup:AddLabel("Kick Settings")
-MethodGroup:AddDropdown("DelayMode", {
-    Text = "Delay Mode",
-    Default = "Normal",
-    Values = { "Normal", "Fast, Not Good" },
-})
-
-MethodGroup:AddToggle("ShouldRagdoll", { Text = "Should Ragdoll", Default = true })
-MethodGroup:AddToggle("RemoveAntiKick", { Text = "Remove Anti-Kick", Default = true })
-
-MethodGroup:AddSlider("XOffset", { Text = "X Offset", Default = 0, Min = -20, Max = 20, Rounding = 0 })
-MethodGroup:AddSlider("YOffset", { Text = "Y Offset", Default = 15, Min = -20, Max = 20, Rounding = 0 })
-MethodGroup:AddSlider("ZOffset", { Text = "Z Offset", Default = 0, Min = -20, Max = 20, Rounding = 0 })
-
-MethodGroup:AddButton({ Text = "TP To Void Platform", Func = function() end })
-
-MethodGroup:AddLabel("Kill Settings")
-MethodGroup:AddDropdown("KillMode", {
-    Text = "Mode",
-    Default = "",
-    Multi = true,
-    Values = { "Ragdoll Kill", "Best", "Void", "Kill" },
-    Placeholder = "Search Modes...",
-})
+updateVisibility({})
 
 KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
     Default = "T",
@@ -198,7 +210,6 @@ end})
 
 local DisplayGroup = Tabs.Settings:AddLeftGroupbox("Display")
 
--- Live Corner Radius
 DisplayGroup:AddSlider("CornerRadius", { 
     Text = "Corner Radius", 
     Default = 17, 
@@ -222,7 +233,6 @@ end})
 
 DisplayGroup:AddDropdown("DPIScale", { Text = "DPI Scale", Default = "100%", Values = { "50%", "75%", "100%", "125%", "150%" } })
 
--- ==================== THEMES & CONFIGURATION ====================
 local ThemeGroup = Tabs.Settings:AddLeftGroupbox("Themes")
 ThemeManager:SetLibrary(Library)
 ThemeManager:ApplyToTab(Tabs.Settings)
@@ -231,7 +241,6 @@ local ConfigGroup = Tabs.Settings:AddRightGroupbox("Configuration")
 SaveManager:SetLibrary(Library)
 SaveManager:IgnoreThemeSettings()
 SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
--- Erstellt automatisch die voll funktionsfähige Config-Liste (inkl. Autoload)
 SaveManager:BuildConfigSection(Tabs.Settings)
 
 local InfoGroup = Tabs.Settings:AddRightGroupbox("Info")
