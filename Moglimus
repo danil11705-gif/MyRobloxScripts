@@ -109,8 +109,43 @@ local Tabs = {
     Settings = Window:AddTab("Settings", "settings"),
 }
 
--- ==================== KEYBINDS (TELEPORT TEST) ====================
 local KeybindsGroup = Tabs.Keybinds:AddLeftGroupbox("Movement Keybinds")
+
+local TargetGroup = Tabs.Target:AddLeftGroupbox("Target")
+TargetGroup:AddDropdown("SelectedTarget", {
+    Text = "Targets",
+    Default = "---",
+    Values = { "---" }, 
+    Placeholder = "Select Target",
+})
+TargetGroup:AddLabel("Select Target")
+
+local ApplyGroup = Tabs.Target:AddLeftGroupbox("Apply")
+ApplyGroup:AddToggle("LoopApplySelected", {
+    Text = "Loop Apply Method Selected",
+    Default = false,
+})
+ApplyGroup:AddToggle("LoopApplyServer", {
+    Text = "Loop Apply Method Server",
+    Default = false,
+})
+ApplyGroup:AddButton({
+    Text = "Apply Method Selected",
+    Func = function()
+    end
+})
+ApplyGroup:AddButton({
+    Text = "Apply Method Server",
+    Func = function()
+    end
+})
+
+local MethodGroup = Tabs.Target:AddRightGroupbox("Method Settings")
+MethodGroup:AddDropdown("MethodDropdown", {
+    Text = "Methods",
+    Default = "---",
+    Values = { "---" },
+})
 
 KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
     Default = "T", -- Standard-Taste für den Teleport
