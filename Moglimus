@@ -112,60 +112,74 @@ local Tabs = {
 local KeybindsGroup = Tabs.Keybinds:AddLeftGroupbox("Movement Keybinds")
 
 local TargetGroup = Tabs.Target:AddLeftGroupbox("Target")
-TargetGroup:AddDropdown("SelectedTarget", {
+
+local PlayerDropdown = TargetGroup:AddDropdown("SelectedTarget", {
     Text = "Targets",
     Default = "---",
     Values = { "---" }, 
-    Placeholder = "Select Target",
+    Placeholder = "Search Player...",
 })
+
+local function updatePlayerList()
+    local players = {"---"}
+    for _, v in pairs(game:GetService("Players"):GetPlayers()) do
+        table.insert(players, v.Name .. " (" .. v.DisplayName .. ")")
+    end
+    PlayerDropdown:SetValues(players)
+end
+
+game:GetService("Players").PlayerAdded:Connect(updatePlayerList)
+game:GetService("Players").PlayerRemoving:Connect(updatePlayerList)
+updatePlayerList()
+
 TargetGroup:AddLabel("Select Target")
 
 local ApplyGroup = Tabs.Target:AddLeftGroupbox("Apply")
-ApplyGroup:AddToggle("LoopApplySelected", {
-    Text = "Loop Apply Method Selected",
-    Default = false,
-})
-ApplyGroup:AddToggle("LoopApplyServer", {
-    Text = "Loop Apply Method Server",
-    Default = false,
-})
-ApplyGroup:AddButton({
-    Text = "Apply Method Selected",
-    Func = function()
-    end
-})
-ApplyGroup:AddButton({
-    Text = "Apply Method Server",
-    Func = function()
-    end
-})
+ApplyGroup:AddToggle("LoopApplySelected", { Text = "Loop Apply Method Selected", Default = false })
+ApplyGroup:AddToggle("LoopApplyServer", { Text = "Loop Apply Method Server", Default = false })
+
+ApplyGroup:AddButton({ Text = "Apply Method Selected", Func = function() end })
+ApplyGroup:AddButton({ Text = "Apply Method Server", Func = function() end })
 
 local MethodGroup = Tabs.Target:AddRightGroupbox("Method Settings")
+
 MethodGroup:AddDropdown("MethodDropdown", {
     Text = "Methods",
     Default = "---",
-    Values = { "---" },
-})
-
-KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
-    Default = "T", -- Standard-Taste für den Teleport
-    SyncToggleState = false, 
-    Mode = "Hold", 
-    Text = "Teleport", 
-    NoUI = false,
-    Callback = function()
-        local player = game:GetService("Players").LocalPlayer
-        local mouse = player:GetMouse()
-        local char = player.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            -- Teleportiert dich exakt dorthin, wo deine Maus gerade hinzeigt
-            char.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
-            Library:Notify("Teleported!")
+    Values = { "---", "LoopKill", "LoopKick" },
+    Callback = function(Value)
+        if Value == "LoopKick" then
+            Library:Notify("Kick Settings Loaded")
+        elseif Value == "LoopKill" then
+            Library:Notify("Kill Settings Loaded")
         end
     end
 })
 
--- ==================== SETTINGS & DISPLAY ====================
+MethodGroup:AddLabel("Kick Settings"):AddColorPicker("KickSep", { Default = Color3.new(1,1,1) })
+
+MethodGroup:AddDropdown("DelayMode", {
+    Text = "Delay Mode",
+    Default = "Normal",
+    Values = { "Normal", "Fast", "Not Good" },
+})
+
+MethodGroup:AddToggle("ShouldRagdoll", { Text = "Should Ragdoll", Default = true })
+MethodGroup:AddToggle("RemoveAntiKick", { Text = "Remove Anti-Kick [Sticky]", Default = true })
+
+MethodGroup:AddSlider("XOffset", { Text = "X Offset", Default = 0, Min = -50, Max = 50, Rounding = 0 })
+MethodGroup:AddSlider("YOffset", { Text = "Y Offset", Default = 15, Min = -50, Max = 50, Rounding = 0 })
+MethodGroup:AddSlider("ZOffset", { Text = "Z Offset", Default = 0, Min = -50, Max = 50, Rounding = 0 })
+
+MethodGroup:AddButton({ Text = "TP To Void Platform", Func = function() end })
+
+MethodGroup:AddLabel("Kill Settings"):AddColorPicker("KillSep", { Default = Color3.new(1,1,1) })
+
+MethodGroup:AddDropdown("KillMode", {
+    Text = "Mode",
+    Default = "Ragdoll Kill",
+    Values = { "Ragdoll Kill", "Best", "Void", "Kill" },
+})-- ==================== SETTINGS & DISPLAY ====================
 local SettingsLeft = Tabs.Settings:AddLeftGroupbox("Menu")
 SettingsLeft:AddLabel("Menu keybind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
 
