@@ -116,7 +116,7 @@ local PlayerDropdown = TargetGroup:AddDropdown("SelectedTarget", {
     Text = "Select Targets",
     Default = "", 
     Values = {}, 
-    Multi = true,
+    Multi = true, -- Erlaubt Auswahl mehrerer Spieler gleichzeitig
     Placeholder = "Search Player...",
 })
 
@@ -143,7 +143,9 @@ local MethodGroup = Tabs.Target:AddRightGroupbox("Method Settings")
 MethodGroup:AddDropdown("MethodDropdown", {
     Text = "Methods",
     Default = "",
+    Multi = true,
     Values = { "LoopKill", "LoopKick" },
+    Placeholder = "Search Methods...",
 })
 
 MethodGroup:AddLabel("Kick Settings")
@@ -165,8 +167,10 @@ MethodGroup:AddButton({ Text = "TP To Void Platform", Func = function() end })
 MethodGroup:AddLabel("Kill Settings")
 MethodGroup:AddDropdown("KillMode", {
     Text = "Mode",
-    Default = "Ragdoll Kill",
+    Default = "",
+    Multi = true,
     Values = { "Ragdoll Kill", "Best", "Void", "Kill" },
+    Placeholder = "Search Modes...",
 })
 
 KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
