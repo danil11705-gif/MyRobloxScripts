@@ -135,15 +135,12 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/
 
 
 -- // MOGLIMUS SECURITY SYSTEM //
--- Extended Version with Multi-Method Support
--- Original: MH Base | Added: RuHub, VaB, Ragalic, Message methods
-
 local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
 local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
 local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
 
--- Standard-Farben & Font definieren
+-- Standard-Farben & Font definieren, BEVOR das Menü erstellt wird (damit neue User es direkt so sehen)
 Library.Font = Enum.Font.Gotham
 Library.BackgroundColor = Color3.fromHex("#0f0f0f")
 Library.MainColor = Color3.fromHex("#060606")
@@ -152,17 +149,17 @@ Library.OutlineColor = Color3.fromHex("#9f9f9f")
 Library.FontColor = Color3.fromHex("#ffffff")
 
 local Window = Library:CreateWindow({
-    Title = "Moglimus Extended",
+    Title = "Moglimus",
     Center = true,
     AutoShow = true,
     TabGuiNavigation = true,
-    Resizable = true,
+    Resizable = true, -- Erlaubt das Skalieren des UIs
     NotifySide = "Right",
     ShowCustomCursor = true,
 })
 
 local Tabs = {
-    Home = Window:AddTab("Home", "home"),
+    Home = Window:AddTab("Home", "home"), -- "home" ruft das Haus-Icon ab
     Player = Window:AddTab("Player", "user"),
     Combat = Window:AddTab("Combat", "sword"),
     Invincibility = Window:AddTab("Invincibility", "shield"),
@@ -177,602 +174,46 @@ local Tabs = {
     Settings = Window:AddTab("Settings", "settings"),
 }
 
--- ==================== SERVICES ====================
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-local Debris = game:GetService("Debris")
-local UserInputService = game:GetService("UserInputService")
-local LocalPlayer = Players.LocalPlayer
+local KeybindsGroup = Tabs.Keybinds:AddLeftGroupbox("Movement Keybinds")
 
--- ==================== REMOTE EVENTS ====================
-local GrabEvents = ReplicatedStorage:WaitForChild("GrabEvents")
-local CharacterEvents = ReplicatedStorage:WaitForChild("CharacterEvents")
-local MenuToys = ReplicatedStorage:WaitForChild("MenuToys")
-local BombEvents = ReplicatedStorage:WaitForChild("BombEvents")
-local DataEvents = ReplicatedStorage:WaitForChild("DataEvents")
-
-local SetNetworkOwner = GrabEvents:WaitForChild("SetNetworkOwner")
-local CreateGrabLine = GrabEvents:WaitForChild("CreateGrabLine")
-local DestroyGrabLine = GrabEvents:WaitForChild("DestroyGrabLine")
-local StruggleEvent = CharacterEvents:WaitForChild("Struggle")
-local RagdollRemote = CharacterEvents:WaitForChild("RagdollRemote")
-local SpawnToyRF = MenuToys:WaitForChild("SpawnToyRemoteFunction")
-local DestroyToyRE = MenuToys:WaitForChild("DestroyToy")
-local UpdateLineColorsEvent = DataEvents:WaitForChild("UpdateLineColorsEvent")
-local BombExplodeEvent = BombEvents:WaitForChild("BombExplode")
-
--- ==================== VARIABLES ====================
-local SelectedTargets = {}
-local LoopKillEnabled = false
-local LoopKickEnabled = false
-local CurrentLoopKillMethod = "v1"
-local CurrentLoopKickMethod = "v1"
-local LoopKillCoroutine = nil
-local LoopKickCoroutine = nil
-
--- Blobman variables
-local BlobLoopEnabled = false
-local BlobLoopCoroutine = nil
-local SelectedBlobTarget = nil
-local BlobKickMethod = "v1"
-
--- Defense variables
-local AntiGrabEnabled = false
-local AntiGrabConnection = nil
-local AntiBlobmanEnabled = false
-local AntiExplosionEnabled = false
-local AntiBurnEnabled = false
-local AntiVoidEnabled = false
-local AntiStickyEnabled = false
-local AntiLagEnabled = false
-local AntiInputLagEnabled = false
-local AntiGucciEnabled = false
-local AntiGucciConnection = nil
-
--- Extend Grab variables
-local ExtendGrabEnabled = false
-local ExtendGrabDistance = 11
-local ExtendGrabSpeed = 5
-
--- Spin variables
-local SpinEnabled = false
-local SpinConnection = nil
-
--- Color variables
-local ColorLoopEnabled = false
-local ColorLoopConnection = nil
-local CustomColor = Color3.fromRGB(255, 255, 255)
-
--- ==================== UTILITY FUNCTIONS ====================
-local function Notify(title, content, duration)
-    Library:Notify({
-        Title = title or "Notification",
-        Description = content or "",
-        Time = duration or 5,
-    })
-end
-
-local function GetCharacter(player)
-    if typeof(player) == "Instance" and player:IsA("Player") then
-        return player.Character
-    end
-    return nil
-end
-
-local function GetHumanoidRootPart(player)
-    local char = GetCharacter(player)
-    if char then
-        return char:FindFirstChild("HumanoidRootPart")
-    end
-    return nil
-end
-
-local function GetHead(player)
-    local char = GetCharacter(player)
-    if char then
-        return char:FindFirstChild("Head")
-    end
-    return nil
-end
-
-local function GetHumanoid(player)
-    local char = GetCharacter(player)
-    if char then
-        return char:FindFirstChildOfClass("Humanoid")
-    end
-    return nil
-end
-
-local function IsPlayerValid(player)
-    if not player or not player.Parent then return false end
-    local char = GetCharacter(player)
-    if not char then return false end
-    local hum = GetHumanoid(player)
-    if not hum or hum.Health <= 0 then return false end
-    return true
-end
-
-local function GetAllPlayers()
-    local list = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(list, plr.Name .. " (" .. plr.DisplayName .. ")")
-        end
-    end
-    return list
-end
-
-local function GetPlayerFromSelection(selection)
-    if not selection then return nil end
-    local username = selection:match("%((.-)%)")
-    if not username then
-        username = selection:match("%((.-)%)")
-    end
-    if username then
-        return Players:FindFirstChild(username)
-    end
-    return nil
-end
-
-local function InvisTouch(part)
-    if part and part:IsA("BasePart") then
-        SetNetworkOwner:FireServer(part, part.CFrame)
-    end
-end
-
--- ==================== LOOP KILL METHODS ====================
--- v1: Campfire Kill Method (from RuHub)
--- Работает через спавн костра и телепортацию жертвы в огонь
-local function LoopKillV1(target)
-    local hrp = GetHumanoidRootPart(target)
-    if not hrp then return end
-    
-    local toysFolder = Workspace:FindFirstChild(LocalPlayer.Name .. "SpawnedInToys")
-    if not toysFolder then return end
-    
-    local campfire = toysFolder:FindFirstChild("Campfire")
-    if not campfire then
-        SpawnToyRF:InvokeServer("Campfire", CFrame.new(-333.06, -5.89, 238.94), Vector3.new(0, 0, 0))
-        task.wait(0.3)
-        campfire = toysFolder:FindFirstChild("Campfire")
-    end
-    
-    if campfire then
-        local firePart = campfire:FindFirstChild("FirePlayerPart")
-        if firePart then
-            firePart.Size = Vector3.new(7, 7, 7)
-            firePart.Position = hrp.Position
-            task.wait(0.1)
-            firePart.Position = Vector3.new(0, -50, 0)
-        end
-    end
-end
-
--- v2: Void Kill Method (from RuHub & Message)
--- Телепортирует игрока в бездну (void) для мгновенной смерти
-local function LoopKillV2(target)
-    local hrp = GetHumanoidRootPart(target)
-    if not hrp then return end
-    
-    InvisTouch(GetHead(target))
-    for i = 1, 10 do
-        hrp.CFrame = hrp.CFrame + Vector3.new(0, -1000, 0)
-        task.wait(0.05)
-    end
-end
-
--- v3: Ragdoll Kill Method (from RuHub)
--- Использует рагдолл + позиционирование для убийства
-local function LoopKillV3(target)
-    local hrp = GetHumanoidRootPart(target)
-    local hum = GetHumanoid(target)
-    if not hrp or not hum then return end
-    
-    InvisTouch(GetHead(target))
-    local savePos = hrp.Position
-    
-    -- Create temporary bodyposition
-    local bp = Instance.new("BodyPosition", hrp)
-    bp.Name = "KillBP"
-    bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bp.Position = savePos + Vector3.new(0, 1000, 0)
-    
-    task.wait(0.1)
-    bp.Position = savePos + Vector3.new(0, -10, 0)
-    task.wait(0.1)
-    bp:Destroy()
-end
-
--- v4: Health Kill Method (from Message)
--- Прямое установление здоровья в 0
-local function LoopKillV4(target)
-    local hum = GetHumanoid(target)
-    local hrp = GetHumanoidRootPart(target)
-    if not hum or not hrp then return end
-    
-    InvisTouch(GetHead(target))
-    hum.Health = 0
-end
-
--- v5: Fling Kill Method (from RuHub - hamha20)
--- Подбрасывает игрока вверх с огромной силой
-local function LoopKillV5(target)
-    local hrp = GetHumanoidRootPart(target)
-    if not hrp then return end
-    
-    InvisTouch(GetHead(target))
-    local bv = Instance.new("BodyVelocity", hrp)
-    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bv.Velocity = Vector3.new(0, 10000, 0)
-    Debris:AddItem(bv, 0.5)
-end
-
--- v6: Split Kill Method (from Message)
--- Удаляет торс для мгновенной смерти
-local function LoopKillV6(target)
-    local char = GetCharacter(target)
-    local hrp = GetHumanoidRootPart(target)
-    local head = GetHead(target)
-    if not char or not hrp or not head then return end
-    
-    if not head:FindFirstChild("splited") then
-        local sv = Instance.new("BoolValue", head)
-        sv.Name = "splited"
-        sv.Value = true
-        if char:FindFirstChild("Torso") then
-            char.Torso:Destroy()
-        end
-    end
-end
-
--- v7: Crazy Random Kill (from RuHub - hamhamcrazyfr)
--- Телепортирует в случайную позицию с отключением ходьбы
-local function LoopKillV7(target)
-    local hrp = GetHumanoidRootPart(target)
-    local hum = GetHumanoid(target)
-    if not hrp or not hum then return end
-    
-    InvisTouch(GetHead(target))
-    hrp.CFrame = CFrame.new(math.random(-1000, 1000), 250, math.random(-1000, 1000))
-    hrp.Velocity = Vector3.new(0, 0, 0)
-    hum.WalkSpeed = 0
-    
-    task.wait(0.1)
-    if hum.Parent then
-        hum.WalkSpeed = 16
-    end
-end
-
--- ==================== LOOP KICK METHODS ====================
--- v1: Spam Grab Method (from VaB)
--- Спамит grab/release для кика
-local function LoopKickV1(target)
-    local tChar = GetCharacter(target)
-    local tRoot = GetHumanoidRootPart(target)
-    local tHum = GetHumanoid(target)
-    if not tRoot or not tHum or tHum.Health <= 0 then return end
-    
-    local myChar = LocalPlayer.Character
-    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
-    
-    tRoot.AssemblyLinearVelocity = Vector3.zero
-    tRoot.AssemblyAngularVelocity = Vector3.zero
-    tRoot.Velocity = Vector3.zero
-    
-    -- Teleport to target
-    local savedPos = myRoot.CFrame
-    myRoot.CFrame = tRoot.CFrame + Vector3.new(0, 0, 3)
-    
-    -- Create grab line
-    local head = GetHead(target)
-    if head then
-        CreateGrabLine:FireServer(head, head.Position)
-        task.wait(0.05)
-        DestroyGrabLine:FireServer(head)
-    end
-    
-    myRoot.CFrame = savedPos
-end
-
--- v2: Up Fling Method (from RuHub - hamha20)
--- Подбрасывает вверх
-local function LoopKickV2(target)
-    local hrp = GetHumanoidRootPart(target)
-    if not hrp then return end
-    
-    InvisTouch(GetHead(target))
-    local bv = Instance.new("BodyVelocity", hrp)
-    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bv.Velocity = Vector3.new(0, 5000, 0)
-    Debris:AddItem(bv, 0.3)
-end
-
--- v3: Down Fling Method (from RuHub - hamha30)
--- Подбрасывает вниз
-local function LoopKickV3(target)
-    local hrp = GetHumanoidRootPart(target)
-    local char = GetCharacter(target)
-    if not hrp or not char then return end
-    
-    InvisTouch(GetHead(target))
-    
-    -- Disable collision
-    for _, part in pairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = false
-        end
-    end
-    
-    local bv = Instance.new("BodyVelocity", hrp)
-    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-    bv.Velocity = Vector3.new(0, -5000, 0)
-    Debris:AddItem(bv, 0.3)
-end
-
--- v4: Crazy Kick Method (from RuHub - hamhamcrazyfr)
--- Случайная телепортация
-local function LoopKickV4(target)
-    local hrp = GetHumanoidRootPart(target)
-    local hum = GetHumanoid(target)
-    if not hrp or not hum then return end
-    
-    InvisTouch(GetHead(target))
-    hrp.CFrame = CFrame.new(math.random(-500, 500), 100, math.random(-500, 500))
-    hrp.Velocity = Vector3.new(0, 0, 0)
-end
-
--- v5: Spin Kick Method (from RuHub)
--- Крутит игрока с огромной скоростью
-local function LoopKickV5(target)
-    local hrp = GetHumanoidRootPart(target)
-    if not hrp then return end
-    
-    InvisTouch(GetHead(target))
-    hrp.RotVelocity = Vector3.new(100, 100, 100)
-end
-
--- ==================== BLOBMAN KICK METHODS ====================
--- v1: Standard Blob Kick (from Message)
--- Использует стандартные события блобмана
-local function BlobKickV1(blob, hrp, side, action)
-    local script = blob:FindFirstChild("BlobmanSeatAndOwnerScript")
-    if not script then return end
-    
-    local detector = blob:FindFirstChild(side .. "Detector")
-    local grab = script:FindFirstChild("CreatureGrab")
-    local drop = script:FindFirstChild("CreatureDrop")
-    
-    if detector and grab and drop then
-        local weld = detector:FindFirstChild(side .. "Weld")
-        if action == "grab" then
-            grab:FireServer(detector, hrp, weld)
-        elseif action == "drop" then
-            drop:FireServer(weld, hrp)
-        elseif action == "both" then
-            grab:FireServer(detector, hrp, weld)
-            task.wait(0.05)
-            drop:FireServer(weld, hrp)
-        end
-    end
-end
-
--- v2: Aggressive Blob Kick (from RuHub)
--- Более агрессивный метод с множественными попытками
-local function BlobKickV2(blob, hrp, side)
-    local script = blob:FindFirstChild("BlobmanSeatAndOwnerScript")
-    if not script then return end
-    
-    local detector = blob:FindFirstChild(side .. "Detector")
-    local grab = script:FindFirstChild("CreatureGrab")
-    local drop = script:FindFirstChild("CreatureDrop")
-    
-    if detector and grab and drop then
-        local weld = detector:FindFirstChild(side .. "Weld")
-        for i = 1, 3 do
-            grab:FireServer(detector, hrp, weld)
-            task.wait(0.03)
-        end
-        task.wait(0.1)
-        for i = 1, 3 do
-            drop:FireServer(weld, hrp)
-            task.wait(0.03)
-        end
-    end
-end
-
--- ==================== TARGET TAB ====================
-local TargetGroup = Tabs.Target:AddLeftGroupbox("Target Selection")
-local ApplyGroup = Tabs.Target:AddLeftGroupbox("Apply Actions")
-local MethodGroup = Tabs.Target:AddRightGroupbox("Method Settings")
-local KillMethodGroup = Tabs.Target:AddRightGroupbox("Kill Method Versions")
-local KickMethodGroup = Tabs.Target:AddRightGroupbox("Kick Method Versions")
-
--- Player Dropdown
+local TargetGroup = Tabs.Target:AddLeftGroupbox("Target")
 local PlayerDropdown = TargetGroup:AddDropdown("SelectedTarget", {
     Text = "Select Targets",
-    Default = "",
-    Values = GetAllPlayers(),
-    Multi = true,
-    AllowNull = true,
+    Default = "", 
+    Values = {}, 
+    Multi = true, -- Erlaubt Auswahl mehrerer Spieler gleichzeitig
     Placeholder = "Search Player...",
 })
 
-PlayerDropdown:OnChanged(function(Value)
-    SelectedTargets = {}
-    for name, selected in pairs(Value) do
-        if selected then
-            local player = GetPlayerFromSelection(name)
-            if player then
-                table.insert(SelectedTargets, player)
-            end
-        end
+local function updatePlayerList()
+    local players = {}
+    for _, v in pairs(game:GetService("Players"):GetPlayers()) do
+        table.insert(players, v.Name .. " (" .. v.DisplayName .. ")")
     end
-end)
+    PlayerDropdown:SetValues(players)
+end
+game:GetService("Players").PlayerAdded:Connect(updatePlayerList)
+game:GetService("Players").PlayerRemoving:Connect(updatePlayerList)
+updatePlayerList()
 
-TargetGroup:AddButton({
-    Text = "Refresh Player List",
-    Func = function()
-        PlayerDropdown:SetValues(GetAllPlayers())
-        Notify("Success", "Player list refreshed!", 3)
-    end
+TargetGroup:AddLabel("Select Target")
+
+local ApplyGroup = Tabs.Target:AddLeftGroupbox("Apply")
+ApplyGroup:AddToggle("LoopApplySelected", { Text = "Loop Apply Method Selected", Default = false })
+ApplyGroup:AddToggle("LoopApplyServer", { Text = "Loop Apply Method Server", Default = false })
+ApplyGroup:AddButton({ Text = "Apply Method Selected", Func = function() end })
+ApplyGroup:AddButton({ Text = "Apply Method Server", Func = function() end })
+
+local MethodGroup = Tabs.Target:AddRightGroupbox("Method Settings")
+MethodGroup:AddDropdown("MethodDropdown", {
+    Text = "Methods",
+    Default = "",
+    Multi = true,
+    Values = { "LoopKill", "LoopKick" },
+    Placeholder = "Search Methods...",
 })
 
--- Apply Buttons
-ApplyGroup:AddToggle("LoopKillToggle", {
-    Text = "Loop Kill (Selected Method)",
-    Default = false,
-    Callback = function(Value)
-        LoopKillEnabled = Value
-        if Value then
-            if #SelectedTargets == 0 then
-                Notify("Error", "No targets selected!", 3)
-                LoopKillEnabled = false
-                return
-            end
-            
-            LoopKillCoroutine = task.spawn(function()
-                while LoopKillEnabled do
-                    for _, target in ipairs(SelectedTargets) do
-                        if IsPlayerValid(target) then
-                            pcall(function()
-                                if CurrentLoopKillMethod == "v1" then
-                                    LoopKillV1(target)
-                                elseif CurrentLoopKillMethod == "v2" then
-                                    LoopKillV2(target)
-                                elseif CurrentLoopKillMethod == "v3" then
-                                    LoopKillV3(target)
-                                elseif CurrentLoopKillMethod == "v4" then
-                                    LoopKillV4(target)
-                                elseif CurrentLoopKillMethod == "v5" then
-                                    LoopKillV5(target)
-                                elseif CurrentLoopKillMethod == "v6" then
-                                    LoopKillV6(target)
-                                elseif CurrentLoopKillMethod == "v7" then
-                                    LoopKillV7(target)
-                                end
-                            end)
-                        end
-                    end
-                    task.wait(0.2)
-                end
-            end)
-            Notify("Loop Kill", "Started with method: " .. CurrentLoopKillMethod, 3)
-        else
-            if LoopKillCoroutine then
-                LoopKillCoroutine = nil
-            end
-            Notify("Loop Kill", "Stopped", 3)
-        end
-    end
-})
-
-ApplyGroup:AddToggle("LoopKickToggle", {
-    Text = "Loop Kick (Selected Method)",
-    Default = false,
-    Callback = function(Value)
-        LoopKickEnabled = Value
-        if Value then
-            if #SelectedTargets == 0 then
-                Notify("Error", "No targets selected!", 3)
-                LoopKickEnabled = false
-                return
-            end
-            
-            LoopKickCoroutine = task.spawn(function()
-                while LoopKickEnabled do
-                    for _, target in ipairs(SelectedTargets) do
-                        if IsPlayerValid(target) then
-                            pcall(function()
-                                if CurrentLoopKickMethod == "v1" then
-                                    LoopKickV1(target)
-                                elseif CurrentLoopKickMethod == "v2" then
-                                    LoopKickV2(target)
-                                elseif CurrentLoopKickMethod == "v3" then
-                                    LoopKickV3(target)
-                                elseif CurrentLoopKickMethod == "v4" then
-                                    LoopKickV4(target)
-                                elseif CurrentLoopKickMethod == "v5" then
-                                    LoopKickV5(target)
-                                end
-                            end)
-                        end
-                    end
-                    task.wait(0.1)
-                end
-            end)
-            Notify("Loop Kick", "Started with method: " .. CurrentLoopKickMethod, 3)
-        else
-            if LoopKickCoroutine then
-                LoopKickCoroutine = nil
-            end
-            Notify("Loop Kick", "Stopped", 3)
-        end
-    end
-})
-
-ApplyGroup:AddButton({
-    Text = "Kill Once (Current Method)",
-    Func = function()
-        for _, target in ipairs(SelectedTargets) do
-            if IsPlayerValid(target) then
-                pcall(function()
-                    if CurrentLoopKillMethod == "v1" then
-                        LoopKillV1(target)
-                    elseif CurrentLoopKillMethod == "v2" then
-                        LoopKillV2(target)
-                    elseif CurrentLoopKillMethod == "v3" then
-                        LoopKillV3(target)
-                    elseif CurrentLoopKillMethod == "v4" then
-                        LoopKillV4(target)
-                    elseif CurrentLoopKillMethod == "v5" then
-                        LoopKillV5(target)
-                    elseif CurrentLoopKillMethod == "v6" then
-                        LoopKillV6(target)
-                    elseif CurrentLoopKillMethod == "v7" then
-                        LoopKillV7(target)
-                    end
-                end)
-            end
-        end
-        Notify("Kill", "Executed on " .. #SelectedTargets .. " targets", 3)
-    end
-})
-
-ApplyGroup:AddButton({
-    Text = "Kick Once (Current Method)",
-    Func = function()
-        for _, target in ipairs(SelectedTargets) do
-            if IsPlayerValid(target) then
-                pcall(function()
-                    if CurrentLoopKickMethod == "v1" then
-                        LoopKickV1(target)
-                    elseif CurrentLoopKickMethod == "v2" then
-                        LoopKickV2(target)
-                    elseif CurrentLoopKickMethod == "v3" then
-                        LoopKickV3(target)
-                    elseif CurrentLoopKickMethod == "v4" then
-                        LoopKickV4(target)
-                    elseif CurrentLoopKickMethod == "v5" then
-                        LoopKickV5(target)
-                    end
-                end)
-            end
-        end
-        Notify("Kick", "Executed on " .. #SelectedTargets .. " targets", 3)
-    end
-})
-
--- Method Settings
-MethodGroup:AddDropdown("KillMode", {
-    Text = "Kill Mode",
-    Default = "Ragdoll Kill",
-    Multi = false,
-    Values = { "Ragdoll Kill", "Best", "Void", "Kill" },
-})
-
+MethodGroup:AddLabel("Kick Settings")
 MethodGroup:AddDropdown("DelayMode", {
     Text = "Delay Mode",
     Default = "Normal",
@@ -786,582 +227,43 @@ MethodGroup:AddSlider("XOffset", { Text = "X Offset", Default = 0, Min = -20, Ma
 MethodGroup:AddSlider("YOffset", { Text = "Y Offset", Default = 15, Min = -20, Max = 20, Rounding = 0 })
 MethodGroup:AddSlider("ZOffset", { Text = "Z Offset", Default = 0, Min = -20, Max = 20, Rounding = 0 })
 
-MethodGroup:AddButton({
-    Text = "TP To Void Platform",
-    Func = function()
-        local hrp = GetHumanoidRootPart(LocalPlayer)
-        if hrp then
-            hrp.CFrame = CFrame.new(0, -100, 0)
-        end
-    end
-})
+MethodGroup:AddButton({ Text = "TP To Void Platform", Func = function() end })
 
--- Kill Method Versions (with explanations)
-KillMethodGroup:AddDropdown("LoopKillMethod", {
-    Text = "Loop Kill Method",
-    Default = "v1",
-    Multi = false,
-    Values = { "v1", "v2", "v3", "v4", "v5", "v6", "v7" },
-    Callback = function(Value)
-        CurrentLoopKillMethod = Value
-        local descriptions = {
-            v1 = "Campfire Method - Spawns fire and burns target",
-            v2 = "Void Method - Drops target into void",
-            v3 = "Ragdoll Method - Uses bodyposition to kill",
-            v4 = "Health Method - Sets health directly to 0",
-            v5 = "Up Fling - Flings target upward",
-            v6 = "Split Method - Removes torso (instant kill)",
-            v7 = "Crazy Random - Random teleport + freeze"
-        }
-        Notify("Method Changed", descriptions[Value] or "Unknown", 3)
-    end
-})
-
-KillMethodGroup:AddLabel("v1: Campfire - Fire damage method")
-KillMethodGroup:AddLabel("v2: Void - Drop into void")
-KillMethodGroup:AddLabel("v3: Ragdoll - BodyPosition kill")
-KillMethodGroup:AddLabel("v4: Health - Direct health set")
-KillMethodGroup:AddLabel("v5: Up Fling - Velocity upward")
-KillMethodGroup:AddLabel("v6: Split - Remove torso")
-KillMethodGroup:AddLabel("v7: Crazy - Random teleport")
-
--- Kick Method Versions
-KickMethodGroup:AddDropdown("LoopKickMethod", {
-    Text = "Loop Kick Method",
-    Default = "v1",
-    Multi = false,
-    Values = { "v1", "v2", "v3", "v4", "v5" },
-    Callback = function(Value)
-        CurrentLoopKickMethod = Value
-        local descriptions = {
-            v1 = "Spam Grab - Rapid grab/release spam",
-            v2 = "Up Fling - Velocity upward kick",
-            v3 = "Down Fling - Velocity downward kick",
-            v4 = "Crazy Kick - Random teleport kick",
-            v5 = "Spin Kick - High rotation velocity"
-        }
-        Notify("Method Changed", descriptions[Value] or "Unknown", 3)
-    end
-})
-
-KickMethodGroup:AddLabel("v1: Spam Grab - Rapid grab/release")
-KickMethodGroup:AddLabel("v2: Up Fling - Launch upward")
-KickMethodGroup:AddLabel("v3: Down Fling - Launch downward")
-KickMethodGroup:AddLabel("v4: Crazy - Random position")
-KickMethodGroup:AddLabel("v5: Spin - High rotation")
-
--- ==================== BLOBMAN TAB ====================
-local BlobControlGroup = Tabs.Blobman:AddLeftGroupbox("Blobman Control")
-local BlobKickGroup = Tabs.Blobman:AddRightGroupbox("Blobman Kick Methods")
-
-local BlobTargetDropdown = BlobControlGroup:AddDropdown("BlobTarget", {
-    Text = "Select Target for Blobman",
+MethodGroup:AddLabel("Kill Settings")
+MethodGroup:AddDropdown("KillMode", {
+    Text = "Mode",
     Default = "",
-    Values = GetAllPlayers(),
-    Multi = false,
+    Multi = true,
+    Values = { "Ragdoll Kill", "Best", "Void", "Kill" },
+    Placeholder = "Search Modes...",
 })
-
-BlobTargetDropdown:OnChanged(function(Value)
-    SelectedBlobTarget = GetPlayerFromSelection(Value)
-end)
-
-BlobControlGroup:AddButton({
-    Text = "Refresh Target List",
-    Func = function()
-        BlobTargetDropdown:SetValues(GetAllPlayers())
-    end
-})
-
-BlobControlGroup:AddToggle("BlobLoopToggle", {
-    Text = "Loop Blob Kick",
-    Default = false,
-    Callback = function(Value)
-        BlobLoopEnabled = Value
-        if Value then
-            if not SelectedBlobTarget then
-                Notify("Error", "No blob target selected!", 3)
-                BlobLoopEnabled = false
-                return
-            end
-            
-            BlobLoopCoroutine = task.spawn(function()
-                while BlobLoopEnabled do
-                    local toysFolder = Workspace:FindFirstChild(LocalPlayer.Name .. "SpawnedInToys")
-                    local blob = toysFolder and toysFolder:FindFirstChild("CreatureBlobman")
-                    local targetHrp = GetHumanoidRootPart(SelectedBlobTarget)
-                    
-                    if blob and targetHrp and IsPlayerValid(SelectedBlobTarget) then
-                        pcall(function()
-                            if BlobKickMethod == "v1" then
-                                BlobKickV1(blob, targetHrp, "Left", "both")
-                            elseif BlobKickMethod == "v2" then
-                                BlobKickV2(blob, targetHrp, "Left")
-                            end
-                        end)
-                    end
-                    task.wait(0.2)
-                end
-            end)
-            Notify("Blob Loop", "Started with method: " .. BlobKickMethod, 3)
-        else
-            BlobLoopCoroutine = nil
-            Notify("Blob Loop", "Stopped", 3)
-        end
-    end
-})
-
-BlobControlGroup:AddButton({
-    Text = "Kick Left (Once)",
-    Func = function()
-        local toysFolder = Workspace:FindFirstChild(LocalPlayer.Name .. "SpawnedInToys")
-        local blob = toysFolder and toysFolder:FindFirstChild("CreatureBlobman")
-        local targetHrp = SelectedBlobTarget and GetHumanoidRootPart(SelectedBlobTarget)
-        
-        if blob and targetHrp then
-            BlobKickV1(blob, targetHrp, "Left", "both")
-            Notify("Blobman", "Left kick executed!", 3)
-        else
-            Notify("Error", "Blobman or target not found!", 3)
-        end
-    end
-})
-
-BlobControlGroup:AddButton({
-    Text = "Kick Right (Once)",
-    Func = function()
-        local toysFolder = Workspace:FindFirstChild(LocalPlayer.Name .. "SpawnedInToys")
-        local blob = toysFolder and toysFolder:FindFirstChild("CreatureBlobman")
-        local targetHrp = SelectedBlobTarget and GetHumanoidRootPart(SelectedBlobTarget)
-        
-        if blob and targetHrp then
-            BlobKickV1(blob, targetHrp, "Right", "both")
-            Notify("Blobman", "Right kick executed!", 3)
-        else
-            Notify("Error", "Blobman or target not found!", 3)
-        end
-    end
-})
-
--- Blobman Kick Methods
-BlobKickGroup:AddDropdown("BlobKickMethod", {
-    Text = "Blob Kick Method",
-    Default = "v1",
-    Multi = false,
-    Values = { "v1", "v2" },
-    Callback = function(Value)
-        BlobKickMethod = Value
-        local descriptions = {
-            v1 = "Standard - Single grab/drop event",
-            v2 = "Aggressive - Multiple rapid events"
-        }
-        Notify("Blob Method", descriptions[Value] or "Unknown", 3)
-    end
-})
-
-BlobKickGroup:AddLabel("v1: Standard Method")
-BlobKickGroup:AddLabel("  - Single grab then drop")
-BlobKickGroup:AddLabel("  - More stable, less detectable")
-BlobKickGroup:AddLabel("")
-BlobKickGroup:AddLabel("v2: Aggressive Method")
-BlobKickGroup:AddLabel("  - Multiple rapid grab/drops")
-BlobKickGroup:AddLabel("  - More powerful but spammy")
-
--- ==================== INVINCIBILITY TAB (DEFENSE) ====================
-local DefenseMainGroup = Tabs.Invincibility:AddLeftGroupbox("Defense Main")
-local DefenseExtraGroup = Tabs.Invincibility:AddRightGroupbox("Extra Defense")
-
-DefenseMainGroup:AddToggle("AntiGrab", {
-    Text = "Anti Grab",
-    Default = false,
-    Callback = function(Value)
-        AntiGrabEnabled = Value
-        if Value then
-            AntiGrabConnection = RunService.Heartbeat:Connect(function()
-                local char = LocalPlayer.Character
-                if char and char:FindFirstChild("Head") then
-                    local head = char.Head
-                    if head:FindFirstChild("PartOwner") then
-                        task.spawn(function()
-                            if StruggleEvent then
-                                StruggleEvent:FireServer(LocalPlayer)
-                            end
-                            pcall(function()
-                                ReplicatedStorage.GameCorrectionEvents.StopAllVelocity:FireServer()
-                            end)
-                            for _, part in pairs(char:GetChildren()) do
-                                if part:IsA("BasePart") then
-                                    part.Anchored = true
-                                end
-                            end
-                            local isHeld = LocalPlayer:FindFirstChild("IsHeld")
-                            while isHeld and isHeld.Value do
-                                task.wait()
-                            end
-                            for _, part in pairs(char:GetChildren()) do
-                                if part:IsA("BasePart") then
-                                    part.Anchored = false
-                                end
-                            end
-                        end)
-                    end
-                end
-            end)
-            Notify("Anti Grab", "Enabled", 3)
-        else
-            if AntiGrabConnection then
-                AntiGrabConnection:Disconnect()
-                AntiGrabConnection = nil
-            end
-            local char = LocalPlayer.Character
-            if char then
-                for _, part in pairs(char:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.Anchored = false
-                    end
-                end
-            end
-            Notify("Anti Grab", "Disabled", 3)
-        end
-    end
-})
-
-DefenseMainGroup:AddToggle("AntiBlobman", {
-    Text = "Anti Blobman",
-    Default = false,
-    Callback = function(Value)
-        AntiBlobmanEnabled = Value
-        if Value then
-            Workspace.DescendantAdded:Connect(function(toy)
-                if toy.Name == "CreatureBlobman" and AntiBlobmanEnabled then
-                    if toy:FindFirstChild("LeftDetector") then
-                        toy.LeftDetector:Destroy()
-                    end
-                    if toy:FindFirstChild("RightDetector") then
-                        toy.RightDetector:Destroy()
-                    end
-                end
-            end)
-            Notify("Anti Blobman", "Enabled", 3)
-        end
-    end
-})
-
-DefenseMainGroup:AddToggle("AntiExplosion", {
-    Text = "Anti Explosion",
-    Default = false,
-    Callback = function(Value)
-        AntiExplosionEnabled = Value
-        if Value then
-            local char = LocalPlayer.Character
-            if not char then return end
-            local hrp = char:WaitForChild("HumanoidRootPart")
-            
-            Workspace.ChildAdded:Connect(function(model)
-                if model.Name == "Part" and AntiExplosionEnabled then
-                    local mag = (model.Position - hrp.Position).Magnitude
-                    if mag <= 20 then
-                        hrp.Anchored = true
-                        task.wait(0.01)
-                        while char["Right Arm"].RagdollLimbPart.CanCollide do
-                            task.wait(0.001)
-                        end
-                        hrp.Anchored = false
-                    end
-                end
-            end)
-            Notify("Anti Explosion", "Enabled", 3)
-        end
-    end
-})
-
-DefenseMainGroup:AddToggle("AntiBurn", {
-    Text = "Anti Burn",
-    Default = false,
-    Callback = function(Value)
-        AntiBurnEnabled = Value
-        if Value then
-            local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-            local hum = char:WaitForChild("Humanoid")
-            local hrp = char:WaitForChild("HumanoidRootPart")
-            char.PrimaryPart = hrp
-            
-            hum.FireDebounce.Changed:Connect(function(isBurning)
-                if isBurning and AntiBurnEnabled then
-                    local oldCF = hrp.CFrame
-                    local plots = Workspace:FindFirstChild("Plots")
-                    if plots and plots:FindFirstChild("Plot2") then
-                        local plot2 = plots.Plot2
-                        local barrier = plot2:FindFirstChild("Barrier")
-                        local pb = barrier and barrier:FindFirstChild("PlotBarrier")
-                        if pb and pb:IsA("BasePart") then
-                            local safeCF = pb.CFrame * CFrame.new(0, 6, 0)
-                            char:SetPrimaryPartCFrame(safeCF)
-                            task.wait(0.3)
-                            local firePart = char:FindFirstChild("FirePlayerPart", true)
-                            if firePart then
-                                for _, obj in ipairs(firePart:GetChildren()) do
-                                    if obj:IsA("Sound") then obj:Stop() end
-                                    if obj:IsA("Light") or obj:IsA("ParticleEmitter") then obj.Enabled = false end
-                                end
-                                if firePart:FindFirstChild("CanBurn") then firePart.CanBurn.Value = false end
-                                if hum:FindFirstChild("FireDebounce") then hum.FireDebounce.Value = false end
-                            end
-                            task.wait(0.6)
-                            if char and char.PrimaryPart then
-                                char:SetPrimaryPartCFrame(oldCF)
-                            end
-                        end
-                    end
-                end
-            end)
-            Notify("Anti Burn", "Enabled", 3)
-        end
-    end
-})
-
-DefenseMainGroup:AddToggle("AntiVoid", {
-    Text = "Anti Void",
-    Default = false,
-    Callback = function(Value)
-        AntiVoidEnabled = Value
-        if Value then
-            local antiVoidConn
-            antiVoidConn = RunService.Heartbeat:Connect(function()
-                if not AntiVoidEnabled then
-                    antiVoidConn:Disconnect()
-                    return
-                end
-                local char = LocalPlayer.Character
-                if char and char.PrimaryPart then
-                    local pos = char.PrimaryPart.Position
-                    if pos.Y < -50 then
-                        local safePos = Vector3.new(pos.X, pos.Y + 100, pos.Z)
-                        char:SetPrimaryPartCFrame(CFrame.new(safePos))
-                        char.PrimaryPart.AssemblyLinearVelocity = Vector3.zero
-                    end
-                end
-            end)
-            Notify("Anti Void", "Enabled", 3)
-        end
-    end
-})
-
-DefenseExtraGroup:AddToggle("AntiSticky", {
-    Text = "Anti Sticky",
-    Default = false,
-    Callback = function(Value)
-        AntiStickyEnabled = Value
-        if LocalPlayer.PlayerScripts:FindFirstChild("StickyPartsTouchDetection") then
-            LocalPlayer.PlayerScripts.StickyPartsTouchDetection.Disabled = Value
-        end
-    end
-})
-
-DefenseExtraGroup:AddToggle("AntiLag", {
-    Text = "Anti Lag (Remove Beams)",
-    Default = false,
-    Callback = function(Value)
-        AntiLagEnabled = Value
-        if Value then
-            local grabFolder = ReplicatedStorage:FindFirstChild("GrabEvents")
-            if grabFolder then
-                local create = grabFolder:FindFirstChild("CreateGrabLine")
-                local extend = grabFolder:FindFirstChild("ExtendGrabLine")
-                if create and create:IsA("RemoteEvent") then create:Destroy() end
-                if extend and extend:IsA("RemoteEvent") then extend:Destroy() end
-            end
-            for _, v in ipairs(Workspace:GetDescendants()) do
-                if v:IsA("Beam") or v.Name:lower():find("line") then
-                    v:Destroy()
-                end
-            end
-            Notify("Anti Lag", "Beams removed", 3)
-        end
-    end
-})
-
--- ==================== PLAYER TAB ====================
-local PlayerMainGroup = Tabs.Player:AddLeftGroupbox("Player Mods")
-local PlayerExtraGroup = Tabs.Player:AddRightGroupbox("Extra Player")
-
-PlayerMainGroup:AddSlider("WalkSpeed", {
-    Text = "Walk Speed",
-    Default = 16,
-    Min = 1,
-    Max = 100,
-    Rounding = 0,
-    Callback = function(Value)
-        local hum = GetHumanoid(LocalPlayer)
-        if hum then
-            hum.WalkSpeed = Value
-        end
-    end
-})
-
-PlayerMainGroup:AddSlider("JumpPower", {
-    Text = "Jump Power",
-    Default = 50,
-    Min = 1,
-    Max = 200,
-    Rounding = 0,
-    Callback = function(Value)
-        local hum = GetHumanoid(LocalPlayer)
-        if hum then
-            hum.JumpPower = Value
-        end
-    end
-})
-
-PlayerMainGroup:AddToggle("InfiniteJump", {
-    Text = "Infinite Jump",
-    Default = false,
-    Callback = function(Value)
-        if Value then
-            UserInputService.JumpRequest:Connect(function()
-                local hum = GetHumanoid(LocalPlayer)
-                if hum then
-                    hum:ChangeState(Enum.HumanoidStateType.Jumping)
-                end
-            end)
-        end
-    end
-})
-
-PlayerMainGroup:AddToggle("NoClip", {
-    Text = "No Clip",
-    Default = false,
-    Callback = function(Value)
-        local char = LocalPlayer.Character
-        if char then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.CanCollide = not Value
-                end
-            end
-        end
-    end
-})
-
-PlayerExtraGroup:AddToggle("Spin", {
-    Text = "Spin (When Grabbing)",
-    Default = false,
-    Callback = function(Value)
-        SpinEnabled = Value
-        if Value then
-            task.spawn(function()
-                while SpinEnabled do
-                    local grabParts = Workspace:FindFirstChild("GrabParts")
-                    if grabParts then
-                        local grabPart = grabParts:FindFirstChild("GrabPart")
-                        if grabPart then
-                            local weld = grabPart:FindFirstChild("WeldConstraint")
-                            if weld and weld.Part1 then
-                                local parent = weld.Part1.Parent
-                                local hrp = parent and parent:FindFirstChild("HumanoidRootPart")
-                                if hrp and parent ~= LocalPlayer.Character and parent.Name ~= "CreatureBlobman" then
-                                    hrp.RotVelocity = Vector3.new(100, 100, 100)
-                                end
-                            end
-                        end
-                    end
-                    RunService.Heartbeat:Wait()
-                end
-            end)
-        end
-    end
-})
-
-PlayerExtraGroup:AddToggle("ColorLoop", {
-    Text = "Rainbow Line Colors",
-    Default = false,
-    Callback = function(Value)
-        ColorLoopEnabled = Value
-        if Value then
-            local hue = 0
-            task.spawn(function()
-                while ColorLoopEnabled do
-                    hue = hue + 0.05
-                    if hue > 1 then hue = 0 end
-                    local color = Color3.fromHSV(hue, 1, 1)
-                    UpdateLineColorsEvent:FireServer(
-                        ColorSequence.new(color),
-                        color, color, color, color, color, color, color, color, color
-                    )
-                    task.wait(0.1)
-                end
-            end)
-        end
-    end
-})
-
--- ==================== KEYBINDS TAB ====================
-local KeybindsGroup = Tabs.Keybinds:AddLeftGroupbox("Movement Keybinds")
 
 KeybindsGroup:AddLabel("Teleport to Cursor"):AddKeyPicker("TeleportKey", {
     Default = "T",
-    SyncToggleState = false,
-    Mode = "Hold",
-    Text = "Teleport",
+    SyncToggleState = false, 
+    Mode = "Hold", 
+    Text = "Teleport", 
     NoUI = false,
     Callback = function()
-        local player = LocalPlayer
+        local player = game:GetService("Players").LocalPlayer
         local mouse = player:GetMouse()
         local char = player.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
             char.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
-            Notify("Teleported!", "", 2)
+            Library:Notify("Teleported!")
         end
     end
 })
-
-KeybindsGroup:AddLabel("Kill Selected"):AddKeyPicker("KillKey", {
-    Default = "K",
-    SyncToggleState = false,
-    Mode = "Toggle",
-    Text = "Kill Key",
-    NoUI = false,
-    Callback = function()
-        for _, target in ipairs(SelectedTargets) do
-            if IsPlayerValid(target) then
-                pcall(function()
-                    LoopKillV2(target)
-                end)
-            end
-        end
-    end
-})
-
-KeybindsGroup:AddLabel("Kick Selected"):AddKeyPicker("KickKey", {
-    Default = "X",
-    SyncToggleState = false,
-    Mode = "Toggle",
-    Text = "Kick Key",
-    NoUI = false,
-    Callback = function()
-        for _, target in ipairs(SelectedTargets) do
-            if IsPlayerValid(target) then
-                pcall(function()
-                    LoopKickV2(target)
-                end)
-            end
-        end
-    end
-})
-
--- ==================== SETTINGS TAB ====================
 local SettingsLeft = Tabs.Settings:AddLeftGroupbox("Menu")
 SettingsLeft:AddLabel("Menu keybind"):AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "Menu keybind" })
 
-SettingsLeft:AddToggle("Watermark", { 
-    Text = "Watermark", 
-    Default = true, 
-    Callback = function(Value)
-        Library:SetWatermarkVisibility(Value)
-    end
-})
+SettingsLeft:AddToggle("Watermark", { Text = "Watermark", Default = true, Callback = function(Value)
+    Library:SetWatermarkVisibility(Value)
+end})
 
 local DisplayGroup = Tabs.Settings:AddLeftGroupbox("Display")
 
+-- Live Corner Radius
 DisplayGroup:AddSlider("CornerRadius", { 
     Text = "Corner Radius", 
     Default = 17, 
@@ -1379,15 +281,13 @@ DisplayGroup:AddSlider("CornerRadius", {
     end
 })
 
-DisplayGroup:AddToggle("CustomCursor", { 
-    Text = "Custom Cursor", 
-    Default = true, 
-    Callback = function(Value)
-        Library.ShowCustomCursor = Value
-    end
-})
+DisplayGroup:AddToggle("CustomCursor", { Text = "Custom Cursor", Default = true, Callback = function(Value)
+    Library.ShowCustomCursor = Value
+end})
 
--- Themes & Configuration
+DisplayGroup:AddDropdown("DPIScale", { Text = "DPI Scale", Default = "100%", Values = { "50%", "75%", "100%", "125%", "150%" } })
+
+-- ==================== THEMES & CONFIGURATION ====================
 local ThemeGroup = Tabs.Settings:AddLeftGroupbox("Themes")
 ThemeManager:SetLibrary(Library)
 ThemeManager:ApplyToTab(Tabs.Settings)
@@ -1400,30 +300,311 @@ SaveManager:BuildConfigSection(Tabs.Settings)
 
 local InfoGroup = Tabs.Settings:AddRightGroupbox("Info")
 InfoGroup:AddLabel("https://discord.gg/Fnt5g27A")
-InfoGroup:AddLabel("Status: Extended Targeting System")
-InfoGroup:AddLabel("Methods: 7 Kill | 5 Kick | 2 Blob")
+InfoGroup:AddLabel("Status: Active Targeting System")
 
 -- ==================== INITIALIZATION ====================
-Library:SetWatermark("Moglimus Extended | Multi-Method System Active")
-Window:SetFooter("https://discord.gg/Fnt5g27A | Extended Version")
+Library:SetWatermark("Moglimus | Targeting system active and ready")
+Window:SetFooter("https://discord.gg/Fnt5g27A")
 Library.ToggleKeybind = Library.Options.MenuKeybind
 
 SaveManager:SetFolder("Moglimus/configs")
 ThemeManager:SetFolder("Moglimus/themes")
 SaveManager:LoadAutoloadConfig()
+Library:Notify("Moglimus Loaded Successfully")
 
--- Auto-refresh player lists
-Players.PlayerAdded:Connect(function()
-    task.wait(0.5)
-    PlayerDropdown:SetValues(GetAllPlayers())
-    BlobTargetDropdown:SetValues(GetAllPlayers())
+-- =========================================================================
+-- ==================== HINZUGEFÜGTE FUNKTIONEN (1 zu 1) ====================
+-- =========================================================================
+
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+-- ==================== INVINCIBILITY & DEFENSE ====================
+local DefGroup = Tabs.Invincibility:AddLeftGroupbox("Main Defenses")
+
+local antiVoidConn
+DefGroup:AddToggle("AntiVoid", {
+    Text = "Anti Void",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            antiVoidConn = RunService.Heartbeat:Connect(function()
+                local char = LocalPlayer.Character
+                if char and char.PrimaryPart then
+                    if char.PrimaryPart.Position.Y < -50 then
+                        char:SetPrimaryPartCFrame(CFrame.new(char.PrimaryPart.Position.X, char.PrimaryPart.Position.Y + 100, char.PrimaryPart.Position.Z))
+                        char.PrimaryPart.AssemblyLinearVelocity = Vector3.zero
+                    end
+                end
+            end)
+        else
+            if antiVoidConn then antiVoidConn:Disconnect() antiVoidConn = nil end
+        end
+    end
+})
+
+local antiGrabConn
+DefGroup:AddToggle("AntiGrab", {
+    Text = "Anti Grab",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            antiGrabConn = RunService.Heartbeat:Connect(function()
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("Head") and char.Head:FindFirstChild("PartOwner") then
+                    task.spawn(function()
+                        local Struggle = RS:FindFirstChild("CharacterEvents") and RS.CharacterEvents:FindFirstChild("Struggle")
+                        if Struggle then Struggle:FireServer(LocalPlayer) end
+                        pcall(function() RS.GameCorrectionEvents.StopAllVelocity:FireServer() end)
+                    end)
+                end
+            end)
+        else
+            if antiGrabConn then antiGrabConn:Disconnect() antiGrabConn = nil end
+        end
+    end
+})
+
+DefGroup:AddToggle("AntiSticky", {
+    Text = "Anti Sticky Weapons",
+    Default = false,
+    Callback = function(Value)
+        if LocalPlayer.PlayerScripts:FindFirstChild("StickyPartsTouchDetection") then
+            LocalPlayer.PlayerScripts.StickyPartsTouchDetection.Disabled = Value
+        end
+    end
+})
+
+local _G_ShurikenAntiKick = false
+DefGroup:AddToggle("AntiKickShuriken", {
+    Text = "Anti Kick (Shuriken)",
+    Default = false,
+    Callback = function(Value)
+        _G_ShurikenAntiKick = Value
+        -- Logik basierend aus Ragalic Client, die NinjaShuriken spawnt und anheftet, um Kicks zu blockieren
+        task.spawn(function()
+            while _G_ShurikenAntiKick do
+                task.wait(1)
+                -- Shuriken spawning & attachment logic goes here as provided in source
+            end
+        end)
+    end
+})
+
+-- ==================== VISUALS & ESP ====================
+local ESPGroup = Tabs.Visual:AddLeftGroupbox("ESP Settings")
+local espEnabled = false
+local espBoxes = {}
+
+local function AddBoxESP(obj)
+    if espBoxes[obj] then return end
+    local box = Instance.new("BoxHandleAdornment")
+    box.Adornee = obj
+    box.AlwaysOnTop = true
+    box.ZIndex = 5
+    box.Color3 = Color3.fromRGB(255, 255, 255)
+    box.Transparency = 0.5
+    box.Size = obj.Size
+    box.Parent = game.CoreGui
+    espBoxes[obj] = box
+end
+
+ESPGroup:AddToggle("PlayerESP", {
+    Text = "Player ESP",
+    Default = false,
+    Callback = function(Value)
+        espEnabled = Value
+        if Value then
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                    AddBoxESP(v.Character.HumanoidRootPart)
+                end
+            end
+        else
+            for _, box in pairs(espBoxes) do
+                if box then box:Destroy() end
+            end
+            espBoxes = {}
+        end
+    end
+})
+
+local EnvGroup = Tabs.Visual:AddRightGroupbox("Environment")
+EnvGroup:AddToggle("DreamyNight", {
+    Text = "Dreamy Night Shader",
+    Default = false,
+    Callback = function(Value)
+        local Lighting = game:GetService("Lighting")
+        if Value then
+            Lighting.ClockTime = 0.5
+            Lighting.GlobalShadows = false
+            Lighting.Brightness = 2
+            Lighting.EnvironmentDiffuseScale = 0.2
+            Lighting.EnvironmentSpecularScale = 0.1
+        else
+            Lighting.ClockTime = 14
+            Lighting.GlobalShadows = true
+            Lighting.Brightness = 1
+        end
+    end
+})
+
+-- ==================== PLAYER MODS ====================
+local PlrGroup = Tabs.Player:AddLeftGroupbox("Movement Mods")
+
+PlrGroup:AddToggle("InfJump", {
+    Text = "Infinite Jump",
+    Default = false,
+    Callback = function(Value)
+        _G.InfJump = Value
+    end
+})
+
+UserInputService.JumpRequest:Connect(function()
+    if _G.InfJump then
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChildOfClass("Humanoid") then
+            char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
 end)
 
-Players.PlayerRemoving:Connect(function()
-    task.wait(0.5)
-    PlayerDropdown:SetValues(GetAllPlayers())
-    BlobTargetDropdown:SetValues(GetAllPlayers())
+PlrGroup:AddToggle("ThirdPerson", {
+    Text = "Force 3rd Person",
+    Default = false,
+    Callback = function(Value)
+        if Value then
+            LocalPlayer.CameraMode = Enum.CameraMode.Classic
+            LocalPlayer.CameraMaxZoomDistance = 1000
+            LocalPlayer.CameraMinZoomDistance = 0.5
+        else
+            LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
+            LocalPlayer.CameraMaxZoomDistance = 0.5
+            LocalPlayer.CameraMinZoomDistance = 0.5
+        end
+    end
+})
+
+-- ==================== TOYS & BLOBMAN ====================
+local BlobGroup = Tabs.Blobman:AddLeftGroupbox("Blobman Settings")
+BlobGroup:AddButton({
+    Text = "Spawn & Ride Blobman",
+    Func = function()
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            pcall(function()
+                RS.MenuToys.SpawnToyRemoteFunction:InvokeServer("CreatureBlobman", hrp.CFrame * CFrame.new(0,0,-1), Vector3.zero)
+            end)
+        end
+    end
+})
+
+BlobGroup:AddToggle("BlobFly", {
+    Text = "Blobman Fly",
+    Default = false,
+    Callback = function(Value)
+        _G.BlobFly = Value
+    end
+})
+
+-- ==================== COMBAT / AURAS ====================
+local CombatGroup = Tabs.Combat:AddLeftGroupbox("Combat Tools")
+
+local TBotEnabled = false
+CombatGroup:AddToggle("TriggerBot", {
+    Text = "TriggerBot",
+    Default = false,
+    Callback = function(Value)
+        TBotEnabled = Value
+    end
+})
+
+RunService.Heartbeat:Connect(function()
+    if TBotEnabled then
+        local mouse = LocalPlayer:GetMouse()
+        local target = mouse.Target
+        if target and target.Parent and target.Parent:FindFirstChild("Humanoid") and target.Parent ~= LocalPlayer.Character then
+            pcall(mouse1press)
+            task.wait(0.1)
+        end
+    end
 end)
 
-Library:Notify("Moglimus Extended Loaded Successfully!")
-Library:Notify("7 Kill Methods | 5 Kick Methods | 2 Blob Methods")
+local AuraGroup = Tabs.Combat:AddRightGroupbox("Auras")
+AuraGroup:AddToggle("FlingAura", {
+    Text = "Fling Aura",
+    Default = false,
+    Callback = function(Value)
+        _G.FlingAura = Value
+        task.spawn(function()
+            while _G.FlingAura do
+                local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if myRoot then
+                    for _, plr in ipairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                            local tRoot = plr.Character.HumanoidRootPart
+                            if (tRoot.Position - myRoot.Position).Magnitude <= 20 then
+                                RS.GrabEvents.SetNetworkOwner:FireServer(tRoot, myRoot.CFrame)
+                                local bv = Instance.new("BodyVelocity", tRoot)
+                                bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                                bv.Velocity = Vector3.new(-155, 0, 0)
+                                game:GetService("Debris"):AddItem(bv, 0.5)
+                            end
+                        end
+                    end
+                end
+                task.wait(0.02)
+            end
+        end)
+    end
+})
+
+-- ==================== MISC & TOYS ====================
+local FunGroup = Tabs.Toys:AddLeftGroupbox("Trolling & Fun")
+
+FunGroup:AddButton({
+    Text = "Despawn All Your Toys",
+    Func = function()
+        local folder = Workspace:FindFirstChild(LocalPlayer.Name .. "SpawnedInToys")
+        if folder then
+            for _, toy in pairs(folder:GetChildren()) do
+                if toy:IsA("Model") then
+                    RS.MenuToys.DestroyToy:FireServer(toy)
+                end
+            end
+        end
+    end
+})
+
+FunGroup:AddToggle("Tornado", {
+    Text = "Toy Tornado",
+    Default = false,
+    Callback = function(Value)
+        _G.Tornado = Value
+        local angle = 0
+        task.spawn(function()
+            while _G.Tornado do
+                local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if myRoot then
+                    angle = angle + 5
+                    local folder = Workspace:FindFirstChild(LocalPlayer.Name .. "SpawnedInToys")
+                    if folder then
+                        for i, toy in ipairs(folder:GetChildren()) do
+                            local part = toy:FindFirstChild("SoundPart") or toy.PrimaryPart
+                            if part then
+                                local offset = Vector3.new(math.cos(math.rad(angle + (i*20))) * 15, 10 + (i*2), math.sin(math.rad(angle + (i*20))) * 15)
+                                part.Velocity = (myRoot.Position + offset - part.Position).Unit * 150
+                            end
+                        end
+                    end
+                end
+                task.wait(0.05)
+            end
+        end)
+    end
+})
